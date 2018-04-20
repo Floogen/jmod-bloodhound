@@ -159,6 +159,7 @@ foreach($newsLink in ($searchBlock.data.children.data | Where {$_.link_flair_tex
                         }
 
             $permaLinksList.Add([pscustomobject]@{'Author' = $comment.author
+                        'Title' = $comment.author_flair_text
                         'Permalink' = $comment.permalink})
 
             #save this comment, so we can avoid finding it in later searches
@@ -191,6 +192,7 @@ foreach($newsLink in ($searchBlock.data.children.data | Where {$_.link_flair_tex
                         }
 
             $permaLinksList.Add([pscustomobject]@{'Author' = $comment.author
+                        'Title' = $comment.author_flair_text
                         'Permalink' = $comment.permalink})
 
             #save this comment, so we can avoid finding it in later searches
@@ -217,8 +219,8 @@ foreach($newsLink in ($searchBlock.data.children.data | Where {$_.link_flair_tex
     {
         #sort all linked comments by authors
         $permaLinksList = $permaLinksList | Sort-Object -Property Author
-        $parsedText = "Hello there, below is a list of comments made by J-Mods in this thread:`n`n"
-        $lastAuthor = ""
+        $parsedText = "### Bark bark!`n`nI have found the followings **J-Mod** comments in this thread:`n`n"
+        $lastAuthor = $null
         $commentCounter = 1
 
         if($postSavedStatus)
@@ -228,7 +230,7 @@ foreach($newsLink in ($searchBlock.data.children.data | Where {$_.link_flair_tex
 
             #TO-DO: DO based on csv storage rather than searching again, will need to implement cleanup so CSV doesn't build up over time
             $previousPostID = $null
-            $previousPostID = "t1_dxp39nh"#TO-DO:DELETE THIS
+            #DEBUG: $previousPostID = "t1_dxp39nh"
             foreach($comment in ($postInfo.data.children | Where {$_.kind -eq "t1"}).data | Where {$_.saved -eq $true -and $_.author -eq $username.ToLower()})
             {
                 $previousPostID = $comment.name
@@ -239,27 +241,28 @@ foreach($newsLink in ($searchBlock.data.children.data | Where {$_.link_flair_tex
             {
                 foreach($jmodComment in $permaLinksList)
                 {
-                    if($lastAuthor = "")
+                    if(!$lastAuthor)
                     {
-                        $parsedText += "**"+$jmodComment.Author+":**`n`n[Comment $commentCounter](https://www.reddit.com/" + $jmodComment.Permalink +")`n"
+                        $parsedText += "**("+$jmodComment.Title+") "+$jmodComment.Author+"**`n`n- [Comment $commentCounter](https://www.reddit.com/" + $jmodComment.Permalink +")`n`n"
                         $lastAuthor = $jmodComment.Author
+                        $commentCounter += 1
                     }
                     elseif($lastAuthor -ne $jmodComment.Author)
                     {
                         $commentCounter = 1
-                        $parsedText += "`n`n**"+$jmodComment.Author+":**`n`n[Comment $commentCounter](https://www.reddit.com/" + $jmodComment.Permalink +")`n"
+                        $parsedText += "`n&nbsp;`n**("+$jmodComment.Title+") "+$jmodComment.Author+"**`n`n- |[Comment $commentCounter](https://www.reddit.com/" + $jmodComment.Permalink +")`n`n"
                         $lastAuthor = $jmodComment.Author
                     }
                     else
                     {
                         #iterate comment counter by one, then append the comment
                         $commentCounter += 1
-                        $parsedText += "[Comment $commentCounter](www.reddit.com/" + $jmodComment.Permalink +")`n"
+                        $parsedText += "- [Comment $commentCounter](www.reddit.com/" + $jmodComment.Permalink +")`n`n"
                     }
                 }
                 #append marker to end of post
                 $editTime = (Get-Date)
-                $parsedText += "`n`nLast edited: $editTime`n`n&nbsp;`n`n---`n`nHi, I'm your friendly neighborhood OSRS bot.  `nI tried my best to find all the J-Mod's comments in this post.`n`nInterested to see how I work? See my post [here](https://www.google.com) for my GitHub repo!"
+                $parsedText += "`n&nbsp;`n`n**Last edited by bot: $editTime**`n`n---`n`nHi, I'm your friendly neighborhood OSRS bot.  `nI tried my best to find all the J-Mod's comments in this post.  `nInterested to see how I work? See my post [here](https://www.reddit.com/user/JMOD_Bloodhound/comments/8dronr/jmod_bloodhound_bot_github_repository/?ref=share&ref_source=link) for my GitHub repo!"
 
                 $payload = @{
                 api_type = "json"
@@ -271,7 +274,7 @@ foreach($newsLink in ($searchBlock.data.children.data | Where {$_.link_flair_tex
                 Write-Host "Editing post... $previousPostID"
                 try
                 {
-                    Invoke-RestMethod -uri "https://oauth.reddit.com/api/editusertext" -Method Post -Headers $header -Body $payload -UserAgent $userAgent
+                    $null = Invoke-RestMethod -uri "https://oauth.reddit.com/api/editusertext" -Method Post -Headers $header -Body $payload -UserAgent $userAgent
                 }
                 catch
                 {
@@ -281,7 +284,7 @@ foreach($newsLink in ($searchBlock.data.children.data | Where {$_.link_flair_tex
                     authorization = $token.token_type + " " + $token.access_token
                     }
                     Write-Host "Renewed Access Code." -ForegroundColor Green
-                    Invoke-RestMethod -uri "https://oauth.reddit.com/api/editusertext" -Method Post -Headers $header -Body $payload -UserAgent $userAgent
+                    $null = Invoke-RestMethod -uri "https://oauth.reddit.com/api/editusertext" -Method Post -Headers $header -Body $payload -UserAgent $userAgent
                 }
             }
         }
@@ -290,34 +293,37 @@ foreach($newsLink in ($searchBlock.data.children.data | Where {$_.link_flair_tex
             #post not saved, create new text post
             foreach($jmodComment in $permaLinksList)
             {
-                if($lastAuthor = "")
+                if(!$lastAuthor)
                 {
-                    $parsedText += "**"+$jmodComment.Author+":**`n`n[Comment $commentCounter](https://www.reddit.com/" + $jmodComment.Permalink +")`n"
+                    $parsedText += "**("+$jmodComment.Title+") "+$jmodComment.Author+"**`n`n- [Comment $commentCounter](https://www.reddit.com/" + $jmodComment.Permalink +")`n`n"
                     $lastAuthor = $jmodComment.Author
+                    $commentCounter += 1
                 }
                 elseif($lastAuthor -ne $jmodComment.Author)
                 {
                     $commentCounter = 1
-                    $parsedText += "`n`n**"+$jmodComment.Author+":**`n`n[Comment $commentCounter](https://www.reddit.com/" + $jmodComment.Permalink +")`n"
+                    $parsedText += "`n&nbsp;`n**("+$jmodComment.Title+") "+$jmodComment.Author+"**`n`n- [Comment $commentCounter](https://www.reddit.com/" + $jmodComment.Permalink +")`n`n"
                     $lastAuthor = $jmodComment.Author
                 }
                 else
                 {
                     #iterate comment counter by one, then append the comment
                     $commentCounter += 1
-                    $parsedText += "[Comment $commentCounter](www.reddit.com/" + $jmodComment.Permalink +")`n"
+                    $parsedText += "- [Comment $commentCounter](www.reddit.com/" + $jmodComment.Permalink +")`n`n"
                 }
             }
             #append marker to end of post
-            $parsedText += "`n`n&nbsp;`n`n---`n`nHi, I'm your friendly neighborhood OSRS bot.  `nI tried my best to find all the J-Mod's comments in this post.`n`nInterested to see how I work? See my post [here](https://www.google.com) for my GitHub repo!"
+            $editTime = (Get-Date)
+            $parsedText += "`n&nbsp;`n`n**Last edited by bot: $editTime**`n`n---`n`nHi, I'm your friendly neighborhood OSRS bot.  `nI tried my best to find all the J-Mod's comments in this post.  `nInterested to see how I work? See my post [here](https://www.reddit.com/user/JMOD_Bloodhound/comments/8dronr/jmod_bloodhound_bot_github_repository/?ref=share&ref_source=link) for my GitHub repo!"
 
             $payload = @{
             api_type = "json"
             text = $parsedText
-            thing_id= "t3_8dq691"#TO-DO: UNCOMMENT THIS/REMOVE FORMER PART: $postID
+            thing_id= "t3_$postID"
             }
 
             #comment on the post now
+            Write-Host "Creating comment on... $postID"
             try
             {
                 $houndPost = Invoke-RestMethod -uri "https://oauth.reddit.com/api/comment" -Method Post -Headers $header -Body $payload -UserAgent $userAgent
