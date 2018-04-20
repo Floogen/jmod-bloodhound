@@ -176,32 +176,60 @@ foreach($newsLink in ($searchBlock.data.children.data | Where {$_.link_flair_tex
         }
     }
 
+    #if any comments were saved, proceed
     if($permaLinksList)
     {
+        #sort all linked comments by authors
+        $permaLinksList = $permaLinksList | Sort-Object -Property Author
+        $parsedText = ""
+        $lastAuthor = ""
+        $commentCounter = 1
+
         if($postSavedStatus)
         {
             #script has touched this post before, append commments to previous post
-            #TO-DO: implement logic to update previous posts
+                #look for bot's previous comment on this post (which will be saved from previous runs)
+            foreach($comment in ($postInfo.data.children | Where {$_.kind -eq "t1"}).data | Where {$_.saved -eq $true -and $_.author -eq $username.ToLower()})
+            {
+                
+            }
         }
         else
         {
             #post not saved, create new text post
-            $parsedText = ""
             foreach($jmodComment in $permaLinksList)
             {
-                
+                if($lastAuthor = "")
+                {
+                    $parsedText += "**"+$jmodComment.Author+":**`n`n[Comment $commentCounter](https://www.reddit.com/" + $jmodComment.Permalink +")`n"
+                    $lastAuthor = $jmodComment.Author
+                }
+                elseif($lastAuthor -ne $jmodComment.Author)
+                {
+                    $commentCounter = 1
+                    $parsedText += "`n`n**"+$jmodComment.Author+":**`n`n[Comment $commentCounter](https://www.reddit.com/" + $jmodComment.Permalink +")`n"
+                    $lastAuthor = $jmodComment.Author
+                }
+                else
+                {
+                    #iterate comment counter by one, then append the comment
+                    $commentCounter += 1
+                    $parsedText += "[Comment $commentCounter](www.reddit.com/" + $jmodComment.Permalink +")`n"
+                }
             }
-            $parsedText += "`n`n&nbsp;`n`n---`n`nHi, I'm your friendly neighborhood OSRS bloodhound.  `nI tried my best to find all the JMOD's comments in this post.`nInterested to see how I work? See my post [here](https://www.google.com) for my GitHub repo!"
+            #append marker to end of post
+            $parsedText += "`n`n&nbsp;`n`n---`n`nHi, I'm your friendly neighborhood OSRS bot.  `nI tried my best to find all the J-Mod's comments in this post.`n`nInterested to see how I work? See my post [here](https://www.google.com) for my GitHub repo!"
 
             $payload = @{
             api_type = "json"
             text = $parsedText
-            thing_id= $targetID
+            thing_id= "t3_8dq691"#TO-DO: UNCOMMENT THIS/REMOVE FORMER PART: $postID
             }
 
+            #comment on the post now
             try
             {
-                $postInfo = Invoke-RestMethod -uri "https://oauth.reddit.com/api/comment" -Method Post -Headers $header -Body $payload -UserAgent $userAgent
+                $houndPost = Invoke-RestMethod -uri "https://oauth.reddit.com/api/comment" -Method Post -Headers $header -Body $payload -UserAgent $userAgent
             }
             catch
             {
@@ -212,17 +240,17 @@ foreach($newsLink in ($searchBlock.data.children.data | Where {$_.link_flair_tex
                 }
                 Write-Host "Renewed Access Code." -ForegroundColor Green
     
-                $postInfo = Invoke-RestMethod -uri "https://oauth.reddit.com/api/comment" -Method Post -Headers $header -Body $payload -UserAgent $userAgent
+                $houndPost = Invoke-RestMethod -uri "https://oauth.reddit.com/api/comment" -Method Post -Headers $header -Body $payload -UserAgent $userAgent
             }
 
 
-            #save post
+            #save newly posted comment
             $payload = @{
                 category = "cached"
-                id = $commentID
+                id = $houndPost.json.data.things.data.name
             }
 
-            #save POST
+            #save bot's posted comment
             try
             {
                 $saveBlock = Invoke-RestMethod -uri "https://oauth.reddit.com/api/save" -Method POST -Headers $header -Body $payload -UserAgent $userAgent
