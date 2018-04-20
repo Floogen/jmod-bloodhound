@@ -125,7 +125,7 @@ foreach($newsLink in ($searchBlock.data.children.data | Where {$_.link_flair_tex
     $snifferSummaryPost = ""
     $permaLinksList = New-Object System.Collections.Generic.List[System.Object]
 
-    $postSavedStatus = $_.saved
+    $postSavedStatus = $newsLink.saved
     $postID = $newsLink.id
     $sniffedPostUri = "https://oauth.reddit.com/r/2007scape/comments/$postID"
 
@@ -146,33 +146,69 @@ foreach($newsLink in ($searchBlock.data.children.data | Where {$_.link_flair_tex
         $postInfo = Invoke-RestMethod -uri $sniffedPostUri -Method GET -Headers $header -UserAgent $userAgent
     }
 
-    #foreach comment in the post with a jagexmod flair
-    foreach($comment in ($postInfo.data.children | Where {$_.kind -eq "t1"}).data | Where {$_.saved -eq $false -and ($_.author_flair_css_class -match "jagexmod")})
+    #if post was previously touched
+    if($postSavedStatus)
     {
-        $payload = @{
-                    category = "cached"
-                    id = $comment.name
-
-                    }
-
-        $permaLinksList.Add([pscustomobject]@{'Author' = $comment.author
-                    'Permalink' = $comment.permalink})
-
-        #save this comment, so we can avoid finding it in later searches
-        try
+        #foreach comment in the post with a jagexmod flair
+        foreach($comment in ($postInfo.data.children | Where {$_.kind -eq "t1"}).data | Where {($_.author_flair_css_class -match "jagexmod")})
         {
-            $saveBlock = Invoke-RestMethod -uri "https://oauth.reddit.com/api/save" -Method POST -Headers $header -Body $payload -UserAgent $userAgent
-        }
-        catch
-        {
-            Write-Host "Token expired, renewing..." -ForegroundColor Red
-            Get-RedditToken #updates token value
-            $header = @{ 
-            authorization = $token.token_type + " " + $token.access_token
+            $payload = @{
+                        category = "cached"
+                        id = $comment.name
+
+                        }
+
+            $permaLinksList.Add([pscustomobject]@{'Author' = $comment.author
+                        'Permalink' = $comment.permalink})
+
+            #save this comment, so we can avoid finding it in later searches
+            try
+            {
+                $saveBlock = Invoke-RestMethod -uri "https://oauth.reddit.com/api/save" -Method POST -Headers $header -Body $payload -UserAgent $userAgent
             }
-            Write-Host "Renewed Access Code." -ForegroundColor Green
+            catch
+            {
+                Write-Host "Token expired, renewing..." -ForegroundColor Red
+                Get-RedditToken #updates token value
+                $header = @{ 
+                authorization = $token.token_type + " " + $token.access_token
+                }
+                Write-Host "Renewed Access Code." -ForegroundColor Green
     
-            $saveBlock = Invoke-RestMethod -uri "https://oauth.reddit.com/api/save" -Method POST -Headers $header -Body $payload -UserAgent $userAgent
+                $saveBlock = Invoke-RestMethod -uri "https://oauth.reddit.com/api/save" -Method POST -Headers $header -Body $payload -UserAgent $userAgent
+            }
+        }
+    }
+    else
+    {
+        #foreach comment in the post with a jagexmod flair
+        foreach($comment in ($postInfo.data.children | Where {$_.kind -eq "t1"}).data | Where {$_.saved -eq $false -and ($_.author_flair_css_class -match "jagexmod")})
+        {
+            $payload = @{
+                        category = "cached"
+                        id = $comment.name
+
+                        }
+
+            $permaLinksList.Add([pscustomobject]@{'Author' = $comment.author
+                        'Permalink' = $comment.permalink})
+
+            #save this comment, so we can avoid finding it in later searches
+            try
+            {
+                $saveBlock = Invoke-RestMethod -uri "https://oauth.reddit.com/api/save" -Method POST -Headers $header -Body $payload -UserAgent $userAgent
+            }
+            catch
+            {
+                Write-Host "Token expired, renewing..." -ForegroundColor Red
+                Get-RedditToken #updates token value
+                $header = @{ 
+                authorization = $token.token_type + " " + $token.access_token
+                }
+                Write-Host "Renewed Access Code." -ForegroundColor Green
+    
+                $saveBlock = Invoke-RestMethod -uri "https://oauth.reddit.com/api/save" -Method POST -Headers $header -Body $payload -UserAgent $userAgent
+            }
         }
     }
 
@@ -189,9 +225,63 @@ foreach($newsLink in ($searchBlock.data.children.data | Where {$_.link_flair_tex
         {
             #script has touched this post before, append commments to previous post
                 #look for bot's previous comment on this post (which will be saved from previous runs)
+
+            #TO-DO: DO based on csv storage rather than searching again, will need to implement cleanup so CSV doesn't build up over time
+            $previousPostID = $null
+            $previousPostID = "t1_dxp39nh"#TO-DO:DELETE THIS
             foreach($comment in ($postInfo.data.children | Where {$_.kind -eq "t1"}).data | Where {$_.saved -eq $true -and $_.author -eq $username.ToLower()})
             {
-                
+                $previousPostID = $comment.name
+            }
+            
+            #found our bot's post
+            if($previousPostID)
+            {
+                foreach($jmodComment in $permaLinksList)
+                {
+                    if($lastAuthor = "")
+                    {
+                        $parsedText += "**"+$jmodComment.Author+":**`n`n[Comment $commentCounter](https://www.reddit.com/" + $jmodComment.Permalink +")`n"
+                        $lastAuthor = $jmodComment.Author
+                    }
+                    elseif($lastAuthor -ne $jmodComment.Author)
+                    {
+                        $commentCounter = 1
+                        $parsedText += "`n`n**"+$jmodComment.Author+":**`n`n[Comment $commentCounter](https://www.reddit.com/" + $jmodComment.Permalink +")`n"
+                        $lastAuthor = $jmodComment.Author
+                    }
+                    else
+                    {
+                        #iterate comment counter by one, then append the comment
+                        $commentCounter += 1
+                        $parsedText += "[Comment $commentCounter](www.reddit.com/" + $jmodComment.Permalink +")`n"
+                    }
+                }
+                #append marker to end of post
+                $parsedText += "`n`n&nbsp;`n`n---`n`nHi, I'm your friendly neighborhood OSRS bot.  `nI tried my best to find all the J-Mod's comments in this post.`n`nInterested to see how I work? See my post [here](https://www.google.com) for my GitHub repo!"
+
+                $payload = @{
+                api_type = "json"
+                text = $parsedText
+                thing_id= $previousPostID
+                }
+
+                #edit post
+                Write-Host "Editing post... $previousPostID"
+                try
+                {
+                    Invoke-RestMethod -uri "https://oauth.reddit.com/api/editusertext" -Method Post -Headers $header -Body $payload -UserAgent $userAgent
+                }
+                catch
+                {
+                    Write-Host "Token expired, renewing..." -ForegroundColor Red
+                    Get-RedditToken #updates token value
+                    $header = @{ 
+                    authorization = $token.token_type + " " + $token.access_token
+                    }
+                    Write-Host "Renewed Access Code." -ForegroundColor Green
+                    Invoke-RestMethod -uri "https://oauth.reddit.com/api/editusertext" -Method Post -Headers $header -Body $payload -UserAgent $userAgent
+                }
             }
         }
         else
@@ -267,6 +357,30 @@ foreach($newsLink in ($searchBlock.data.children.data | Where {$_.link_flair_tex
                 $saveBlock = Invoke-RestMethod -uri "https://oauth.reddit.com/api/save" -Method POST -Headers $header -Body $payload -UserAgent $userAgent
             }
         }
+    }
+
+    if(!$postSavedStatus)      
+    { 
+        Write-Host "Caching and posting to" $newsLink.title
+        $payload = @{
+                    category = "cached"
+                    id = $newsLink.name
+
+                    }
+        try
+        {
+            $saveBlock = Invoke-RestMethod -uri "https://oauth.reddit.com/api/save" -Method POST -Headers $header -Body $payload -UserAgent $userAgent
+        }
+        catch
+        {
+            Write-Host "Token expired, renewing..." -ForegroundColor Red
+            Get-RedditToken #updates token value
+            $header = @{ 
+            authorization = $token.token_type + " " + $token.access_token}
+        }
+        Write-Host "Renewed Access Code." -ForegroundColor Green
+        
+        $saveBlock = Invoke-RestMethod -uri "https://oauth.reddit.com/api/save" -Method POST -Headers $header -Body $payload -UserAgent $userAgent
     }
     break
 }
