@@ -49,59 +49,31 @@ function Get-RedditToken
 }
 
 #function to search sub-tree comments
-function subCommentSearch($commentList, [bool]$needsToBeSaved)
+function subCommentSearch($commentList)
 {
     foreach($subComment in $commentList)
     {
+        #if there are more replies underneath this subcomment, recursively search downwards
         if($subComment.replies)
         {
-            subCommentSearch -commentList $subComment.replies.data.children.data -needsToBeSaved $needsToBeSaved
+            subCommentSearch -commentList $subComment.replies.data.children.data
         }
 
-        if(!$needsToBeSaved)
+        #if comment flair matches our target(s), proceed
+        if($subComment.author_flair_css_class -match "jagexmod" -or $subComment.author_flair_css_class -match "modmatk")
         {
-            if($subComment.author_flair_css_class -match "jagexmod" -or $subComment.author_flair_css_class -match "modmatk")
+            $payload = @{
+            category = "cached"
+            id = $subComment.name}
+
+            $global:permaLinksList.Add([pscustomobject]@{'Author' = $subComment.author
+            'Title' = $subComment.author_flair_text
+            'Permalink' = $subComment.permalink})
+
+            #if comment is not saved, then save it
+            if($subComment.saved -eq $false)
             {
-                $payload = @{
-                category = "cached"
-                id = $subComment.name}
-
-                $global:permaLinksList.Add([pscustomobject]@{'Author' = $subComment.author
-                                'Title' = $subComment.author_flair_text
-                                'Permalink' = $subComment.permalink})
-                if($subComment.saved -eq $false)
-                {
-                    $subComment.permalink
-                    try
-                    {
-                        $saveBlock = Invoke-RestMethod -uri "https://oauth.reddit.com/api/save" -Method POST -Headers $global:header -Body $payload -UserAgent $global:userAgent
-                    }
-                    catch
-                    {
-                        Write-Host "Token expired, renewing..." -ForegroundColor Red
-                        Get-RedditToken #updates token value
-                        $header = @{ 
-                            authorization = $global:token.token_type + " " + $global:token.access_token
-                            }
-                        Write-Host "Renewed Access Code." -ForegroundColor Green
-    
-                        $saveBlock = Invoke-RestMethod -uri "https://oauth.reddit.com/api/save" -Method POST -Headers $global:header -Body $payload -UserAgent $global:userAgent
-                    }
-                }
-            }
-        }
-        else
-        {
-            if(($subComment.author_flair_css_class -match "jagexmod" -or $subComment.author_flair_css_class -match "modmatk") -and $subComment.saved -eq $false)
-            {
-                $payload = @{
-                category = "cached"
-                id = $subComment.name}
-
-                $global:permaLinksList.Add([pscustomobject]@{'Author' = $subComment.author
-                                'Title' = $subComment.author_flair_text
-                                'Permalink' = $subComment.permalink})
-
+                $subComment.permalink
                 try
                 {
                     $saveBlock = Invoke-RestMethod -uri "https://oauth.reddit.com/api/save" -Method POST -Headers $global:header -Body $payload -UserAgent $global:userAgent
@@ -111,10 +83,10 @@ function subCommentSearch($commentList, [bool]$needsToBeSaved)
                     Write-Host "Token expired, renewing..." -ForegroundColor Red
                     Get-RedditToken #updates token value
                     $header = @{ 
-                        authorization = $global:token.token_type + " " + $global:token.access_token
-                        }
+                    authorization = $global:token.token_type + " " + $global:token.access_token
+                    }
                     Write-Host "Renewed Access Code." -ForegroundColor Green
-    
+
                     $saveBlock = Invoke-RestMethod -uri "https://oauth.reddit.com/api/save" -Method POST -Headers $global:header -Body $payload -UserAgent $global:userAgent
                 }
             }
@@ -167,16 +139,14 @@ catch
     Write-Host "Renewed Access Code." -ForegroundColor Green
 }
 
-#TO-DO: Remove everything above this, this powershell script will only be used to sniff any untracked hot posts with JMOD reply
-
-#have a search limit of the latest 100 posts on the 2007scape reddit
+#have a search limit of the latest 100 posts on the 2007scape reddit (100 is the upper limit of Reddit's API)
 $payload = @{
             limit = '100'
             }
 
 #attempt to search the new posts, if fails reattempt to get token (as it may have expired)
     #TO DO: rewrite this for smarter error checking, but in most cases it will be the token expiring
-    #since the script is running once per minute to check against new posts (and there doesn't seem to be a way to check when a token will expire other than tracking it yourself)
+    #since the script is running once every 5 minutes to check against new posts (and there doesn't seem to be a way to check when a token will expire other than tracking it yourself)
         #we'll just do a lazy try-catch for each API call
 
 $searchBlock = $null
@@ -196,17 +166,20 @@ catch
     $searchBlock = Invoke-RestMethod -uri "https://oauth.reddit.com/r/2007scape/hot" -Method Get -Headers $header -Body $payload -UserAgent $userAgent
 }
 
-#go through each news post with a J-MOD reply flair
+#go through each news post with a "J-MOD reply" flair
 foreach($newsLink in ($searchBlock.data.children.data | Where {$_.link_flair_text -match "J-MOD"}))
 {
-    $snifferSummaryPost = ""
+    #list of all permalinks for valid J-MOD comments
     $permaLinksList = New-Object System.Collections.Generic.List[System.Object]
-
+    #get post's save status
     $postSavedStatus = $newsLink.saved
+    #reddit ID for the post
     $postID = $newsLink.id
+
+    #uri to get all the comments from the post
     $sniffedPostUri = "https://oauth.reddit.com/r/2007scape/comments/$postID"
-    #DEBUG: $sniffedPostUri
-    #get the interior post information (comments)
+
+    #get the post's interior information (comments)
     try
     {
         $postInfo = Invoke-RestMethod -uri $sniffedPostUri -Method GET -Headers $header -UserAgent $userAgent
@@ -223,12 +196,13 @@ foreach($newsLink in ($searchBlock.data.children.data | Where {$_.link_flair_tex
         $postInfo = Invoke-RestMethod -uri $sniffedPostUri -Method GET -Headers $header -UserAgent $userAgent
     }
 
-    #if post was previously touched
+    #if post was previously touched (saved)
     if($postSavedStatus)
     {
-        #foreach comment in the post with a jagexmod flair
+        #foreach comment in the post
         foreach($comment in ($postInfo.data.children | Where {$_.kind -eq "t1"}).data)
         {
+            #if comment has replies, search down it further
             if($comment.replies)
             {
                 foreach($subComment in $comment.replies.data.children.data)
@@ -236,30 +210,35 @@ foreach($newsLink in ($searchBlock.data.children.data | Where {$_.link_flair_tex
                     subCommentSearch -commentList $subComment
                 }
             }
+            #if comment has flair of a J-MOD, then add it to the permalink list and save it
             if($comment.author_flair_css_class -match "jagexmod" -or $comment.author_flair_css_class -match "modmatk")
             {
                 $payload = @{
                     category = "cached"
                     id = $comment.name}
 
-                    $permaLinksList.Add([pscustomobject]@{'Author' = $comment.author
+                $permaLinksList.Add([pscustomobject]@{'Author' = $comment.author
                                 'Title' = $comment.author_flair_text
                                 'Permalink' = $comment.permalink})
 
-                try
-                {
-                    $saveBlock = Invoke-RestMethod -uri "https://oauth.reddit.com/api/save" -Method POST -Headers $global:header -Body $payload -UserAgent $global:userAgent
-                }
-                catch
-                {
-                    Write-Host "Token expired, renewing..." -ForegroundColor Red
-                    Get-RedditToken #updates token value
-                    $header = @{ 
-                        authorization = $global:token.token_type + " " + $global:token.access_token
-                        }
-                    Write-Host "Renewed Access Code." -ForegroundColor Green
+                #if comment hasn't been saved it
+                if($comment.saved -eq $false)
+                {                
+                    try
+                    {
+                        $saveBlock = Invoke-RestMethod -uri "https://oauth.reddit.com/api/save" -Method POST -Headers $global:header -Body $payload -UserAgent $global:userAgent
+                    }
+                    catch
+                    {
+                        Write-Host "Token expired, renewing..." -ForegroundColor Red
+                        Get-RedditToken #updates token value
+                        $header = @{ 
+                            authorization = $global:token.token_type + " " + $global:token.access_token
+                            }
+                        Write-Host "Renewed Access Code." -ForegroundColor Green
     
-                    $saveBlock = Invoke-RestMethod -uri "https://oauth.reddit.com/api/save" -Method POST -Headers $global:header -Body $payload -UserAgent $global:userAgent
+                        $saveBlock = Invoke-RestMethod -uri "https://oauth.reddit.com/api/save" -Method POST -Headers $global:header -Body $payload -UserAgent $global:userAgent
+                    }
                 }
             }
         }
@@ -269,13 +248,16 @@ foreach($newsLink in ($searchBlock.data.children.data | Where {$_.link_flair_tex
         #foreach comment in the post with a jagexmod flair
         foreach($comment in ($postInfo.data.children | Where {$_.kind -eq "t1"}).data)
         {
+            #if comment has replies, search down it further
             if($comment.replies)
             {
                 foreach($subComment in $comment.replies.data.children.data)
                 {
-                    subCommentSearch -commentList $subComment -needsToBeSaved $true
+                    subCommentSearch -commentList $subComment
                 }
             }
+
+            #if comment has flair of a J-MOD, then add it to the permalink list and save it
             if(($comment.author_flair_css_class -match "jagexmod" -or $comment.author_flair_css_class -match "modmatk") -and $comment.saved -eq $false)
             {
                 $payload = @{
@@ -286,6 +268,7 @@ foreach($newsLink in ($searchBlock.data.children.data | Where {$_.link_flair_tex
                                 'Title' = $comment.author_flair_text
                                 'Permalink' = $comment.permalink})
 
+                #no need to do safety check for saving, as post hasn't been touched yet (first time visiting this post)
                 try
                 {
                     $saveBlock = Invoke-RestMethod -uri "https://oauth.reddit.com/api/save" -Method POST -Headers $global:header -Body $payload -UserAgent $global:userAgent
@@ -321,21 +304,27 @@ foreach($newsLink in ($searchBlock.data.children.data | Where {$_.link_flair_tex
 
             #TO-DO: DO based on csv storage rather than searching again, will need to implement cleanup so CSV doesn't build up over time
             $previousPostID = $null
-            #DEBUG: $previousPostID = "t1_dxp39nh"
+            
+            #lazy-man method of finding old bot comment
             foreach($comment in ($postInfo.data.children | Where {$_.kind -eq "t1"}).data | Where {$_.saved -eq $true -and $_.author -eq $username.ToLower()})
             {
                 $previousPostID = $comment.name
+                #break free of comment search once we have match
+                break
             }
-            
+
             #found our bot's post
             if($previousPostID)
             {
                 foreach($jmodComment in $permaLinksList)
                 {
+                    #if J-MOD title doesn't exist, then give them generic title of "J-MOD"
                     if(!$jmodComment.Title)
                     {
                         $jmodComment.Title = "J-Mod"
                     }
+
+                    #if lastAuthor doesn't exist, then this is the first J-MOD comment in the list (don't iterate counter from 1)
                     if(!$lastAuthor)
                     {
                         $parsedText += "**("+$jmodComment.Title+") "+$jmodComment.Author+"**`n`n- [Comment $commentCounter](https://www.reddit.com/" + $jmodComment.Permalink +")`n`n"
@@ -354,6 +343,7 @@ foreach($newsLink in ($searchBlock.data.children.data | Where {$_.link_flair_tex
                         $parsedText += "- [Comment $commentCounter](https://www.reddit.com/" + $jmodComment.Permalink +")`n`n"
                     }
                 }
+
                 #append marker to end of post
                 $editTime = (Get-Date)
                 $parsedText += "`n&nbsp;`n`n**Last edited by bot: $editTime**`n`n---`n`nHi, I'm your friendly neighborhood OSRS bot.  `nI tried my best to find all the J-Mod's comments in this post.  `nInterested to see how I work? See my post [here](https://www.reddit.com/user/JMOD_Bloodhound/comments/8dronr/jmod_bloodhound_bot_github_repository/?ref=share&ref_source=link) for my GitHub repo!"
@@ -364,7 +354,7 @@ foreach($newsLink in ($searchBlock.data.children.data | Where {$_.link_flair_tex
                 thing_id= $previousPostID
                 }
 
-                #edit post
+                #edit the post
                 Write-Host "Editing post... $previousPostID"
                 try
                 {
@@ -387,10 +377,13 @@ foreach($newsLink in ($searchBlock.data.children.data | Where {$_.link_flair_tex
             #post not saved, create new text post
             foreach($jmodComment in $permaLinksList)
             {
+                #if J-MOD title doesn't exist, then give them generic title of "J-MOD"
                 if(!$jmodComment.Title)
                 {
                     $jmodComment.Title = "J-Mod"
                 }
+
+                #if lastAuthor doesn't exist, then this is the first J-MOD comment in the list (don't iterate counter from 1)
                 if(!$lastAuthor)
                 {
                     $parsedText += "**("+$jmodComment.Title+") "+$jmodComment.Author+"**`n`n- [Comment $commentCounter](https://www.reddit.com/" + $jmodComment.Permalink +")`n`n"
@@ -463,6 +456,7 @@ foreach($newsLink in ($searchBlock.data.children.data | Where {$_.link_flair_tex
         }
     }
 
+    #if post was not saved
     if(!$postSavedStatus)      
     { 
         Write-Host "Caching and posting to" $newsLink.title
