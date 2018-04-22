@@ -13,7 +13,7 @@ I commented the script pretty thoroughly, but some things may be confusing to re
 
 # To-do List
 - [ ] Change the many try-catch calls into a function.
-- [x] Release the the hound (to the public).
+- [x] Release the hound (to the public).
 
 # Notes
 * **Big** shout-out to [RedditPreview](http://redditpreview.com/) as it helped immensely with debugging the Markup formatting!
