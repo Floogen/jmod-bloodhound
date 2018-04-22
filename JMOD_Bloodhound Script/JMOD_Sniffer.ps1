@@ -94,7 +94,7 @@ function subCommentSearch($commentList)
     }
 }
 
-#get token from local .txt
+#get token from local .csv
     #then check if it's valid, if not use function
 $token = $null
 try
