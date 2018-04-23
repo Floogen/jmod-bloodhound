@@ -167,7 +167,7 @@ catch
 }
 
 #go through each news post with a "J-MOD reply" flair
-foreach($newsLink in ($searchBlock.data.children.data | Where {$_.link_flair_text -match "J-MOD"}))
+foreach($newsLink in ($searchBlock.data.children.data | Where {$_.link_flair_text -match "J-MOD" -or $_.author_flair_css_class -match "jagexmod" -or $_.author_flair_css_class -match "modmatk"}))
 {
     #list of all permalinks for valid J-MOD comments
     $permaLinksList = New-Object System.Collections.Generic.List[System.Object]
