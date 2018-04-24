@@ -242,6 +242,51 @@ foreach($newsLink in ($searchBlock.data.children.data | Where {$_.link_flair_tex
                 }
             }
         }
+
+        #foreach "more" comment in the post
+        foreach($moreComment in ($moreCommentsInfo.json.data.things | Where {$_.kind -eq "t1"}).data)
+        {
+            #if comment has replies, search down it further
+            if($moreComment.replies)
+            {
+                foreach($subComment in $moreComment.replies.data.children.data)
+                {
+                    subCommentSearch -commentList $subComment
+                }
+            }
+            #if comment has flair of a J-MOD, then add it to the permalink list and save it
+            if($moreComment.author_flair_css_class -match "jagexmod" -or $moreComment.author_flair_css_class -match "modmatk")
+            {
+                $payload = @{
+                    category = "cached"
+                    id = $moreComment.name}
+
+                $permaLinksList.Add([pscustomobject]@{'Author' = $moreComment.author
+                    'Title' = $moreComment.author_flair_text
+                    'Permalink' = $moreComment.permalink})
+
+                #if comment hasn't been saved it
+                if($moreComment.saved -eq $false)
+                {    
+                    try
+                    {
+                        $saveBlock = Invoke-RestMethod -uri "https://oauth.reddit.com/api/save" -Method POST -Headers $global:header -Body $payload -UserAgent $global:userAgent
+                    }
+                    catch
+                    {
+                        Write-Host "Token expired, renewing..." -ForegroundColor Red
+                        Get-RedditToken #updates token value
+                        $header = @{ 
+                            authorization = $global:token.token_type + " " + $global:token.access_token
+                            }
+                        Write-Host "Renewed Access Code." -ForegroundColor Green
+    
+                        $saveBlock = Invoke-RestMethod -uri "https://oauth.reddit.com/api/save" -Method POST -Headers $global:header -Body $payload -UserAgent $global:userAgent
+                    }
+                }
+            }
+        }
+
     }
     else
     {
@@ -286,6 +331,48 @@ foreach($newsLink in ($searchBlock.data.children.data | Where {$_.link_flair_tex
                 }
             }
         }
+
+        #foreach "more" comment
+        foreach($moreComment in ($moreCommentsInfo.json.data.things | Where {$_.kind -eq "t1"}).data)
+        {
+            #if comment has replies, search down it further
+            if($moreComment.replies)
+            {
+                foreach($subComment in $moreComment.replies.data.children.data)
+                {
+                    subCommentSearch -commentList $subComment
+                }
+            }
+
+            #if comment has flair of a J-MOD, then add it to the permalink list and save it
+            if(($moreComment.author_flair_css_class -match "jagexmod" -or $moreComment.author_flair_css_class -match "modmatk") -and $moreComment.saved -eq $false)
+            {
+                $payload = @{
+                    category = "cached"
+                    id = $moreComment.name}
+
+                    $permaLinksList.Add([pscustomobject]@{'Author' = $moreComment.author
+                'Title' = $moreComment.author_flair_text
+                'Permalink' = $moreComment.permalink})
+
+                #no need to do safety check for saving, as post hasn't been touched yet (first time visiting this post)
+                try
+                {
+                    $saveBlock = Invoke-RestMethod -uri "https://oauth.reddit.com/api/save" -Method POST -Headers $global:header -Body $payload -UserAgent $global:userAgent
+                }
+                catch
+                {
+                    Write-Host "Token expired, renewing..." -ForegroundColor Red
+                    Get-RedditToken #updates token value
+                    $header = @{ 
+                    authorization = $global:token.token_type + " " + $global:token.access_token
+                    }
+                    Write-Host "Renewed Access Code." -ForegroundColor Green
+    
+                    $saveBlock = Invoke-RestMethod -uri "https://oauth.reddit.com/api/save" -Method POST -Headers $global:header -Body $payload -UserAgent $global:userAgent
+                }
+            }
+        }
     }
 
     #if any comments were saved, proceed
@@ -293,7 +380,7 @@ foreach($newsLink in ($searchBlock.data.children.data | Where {$_.link_flair_tex
     {
         #sort all linked comments by authors
         $permaLinksList = $permaLinksList | Sort-Object -Property Author
-        $parsedText = "### Bark bark!`n`nI have found the followings **J-Mod** comments in this thread:`n`n"
+        $parsedText = "### Bark bark!`n`nI have found the following **J-Mod** comments in this thread:`n`n"
         $lastAuthor = $null
         $commentCounter = 1
 
