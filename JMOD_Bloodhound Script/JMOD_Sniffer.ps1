@@ -414,20 +414,20 @@ foreach($newsLink in ($searchBlock.data.children.data | Where {$_.link_flair_tex
                     #if lastAuthor doesn't exist, then this is the first J-MOD comment in the list (don't iterate counter from 1)
                     if(!$lastAuthor)
                     {
-                        $parsedText += "**("+$jmodComment.Title+") "+$jmodComment.Author+"**`n`n- [Comment $commentCounter](https://www.reddit.com/" + $jmodComment.Permalink +")`n`n"
+                        $parsedText += "**("+$jmodComment.Title+") "+$jmodComment.Author+"**`n`n- [Comment $commentCounter](https://www.reddit.com" + $jmodComment.Permalink +")`n`n"
                         $lastAuthor = $jmodComment.Author
                     }
                     elseif($lastAuthor -ne $jmodComment.Author)
                     {
                         $commentCounter = 1
-                        $parsedText += "`n&nbsp;`n**("+$jmodComment.Title+") "+$jmodComment.Author+"**`n`n- [Comment $commentCounter](https://www.reddit.com/" + $jmodComment.Permalink +")`n`n"
+                        $parsedText += "`n&nbsp;`n**("+$jmodComment.Title+") "+$jmodComment.Author+"**`n`n- [Comment $commentCounter](https://www.reddit.com" + $jmodComment.Permalink +")`n`n"
                         $lastAuthor = $jmodComment.Author
                     }
                     else
                     {
                         #iterate comment counter by one, then append the comment
                         $commentCounter += 1
-                        $parsedText += "- [Comment $commentCounter](https://www.reddit.com/" + $jmodComment.Permalink +")`n`n"
+                        $parsedText += "- [Comment $commentCounter](https://www.reddit.com" + $jmodComment.Permalink +")`n`n"
                     }
                 }
 
@@ -473,20 +473,20 @@ foreach($newsLink in ($searchBlock.data.children.data | Where {$_.link_flair_tex
                 #if lastAuthor doesn't exist, then this is the first J-MOD comment in the list (don't iterate counter from 1)
                 if(!$lastAuthor)
                 {
-                    $parsedText += "**("+$jmodComment.Title+") "+$jmodComment.Author+"**`n`n- [Comment $commentCounter](https://www.reddit.com/" + $jmodComment.Permalink +")`n`n"
+                    $parsedText += "**("+$jmodComment.Title+") "+$jmodComment.Author+"**`n`n- [Comment $commentCounter](https://www.reddit.com" + $jmodComment.Permalink +")`n`n"
                     $lastAuthor = $jmodComment.Author
                 }
                 elseif($lastAuthor -ne $jmodComment.Author)
                 {
                     $commentCounter = 1
-                    $parsedText += "`n&nbsp;`n**("+$jmodComment.Title+") "+$jmodComment.Author+"**`n`n- [Comment $commentCounter](https://www.reddit.com/" + $jmodComment.Permalink +")`n`n"
+                    $parsedText += "`n&nbsp;`n**("+$jmodComment.Title+") "+$jmodComment.Author+"**`n`n- [Comment $commentCounter](https://www.reddit.com" + $jmodComment.Permalink +")`n`n"
                     $lastAuthor = $jmodComment.Author
                 }
                 else
                 {
                     #iterate comment counter by one, then append the comment
                     $commentCounter += 1
-                    $parsedText += "- [Comment $commentCounter](https://www.reddit.com/" + $jmodComment.Permalink +")`n`n"
+                    $parsedText += "- [Comment $commentCounter](https://www.reddit.com" + $jmodComment.Permalink +")`n`n"
                 }
             }
             #append marker to end of post
