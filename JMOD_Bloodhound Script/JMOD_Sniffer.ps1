@@ -507,14 +507,19 @@ foreach($newsLink in ($searchBlock.data.children.data | Where {$_.link_flair_tex
             }
             catch
             {
-                Write-Host "Token expired, renewing..." -ForegroundColor Red
-                Get-RedditToken #updates token value
-                $header = @{ 
-                authorization = $token.token_type + " " + $token.access_token
+                try
+                {
+                    $houndPost = Invoke-RestMethod -uri "https://oauth.reddit.com/api/comment" -Method Post -Headers $header -Body $payload -UserAgent $userAgent
                 }
-                Write-Host "Renewed Access Code." -ForegroundColor Green
-    
-                $houndPost = Invoke-RestMethod -uri "https://oauth.reddit.com/api/comment" -Method Post -Headers $header -Body $payload -UserAgent $userAgent
+                catch
+                {
+                    Write-Host "Token expired, renewing..." -ForegroundColor Red
+                    Get-RedditToken #updates token value
+                    $header = @{ 
+                    authorization = $token.token_type + " " + $token.access_token}
+                    Write-Host "Renewed Access Code." -ForegroundColor Green
+                    $houndPost = Invoke-RestMethod -uri "https://oauth.reddit.com/api/comment" -Method Post -Headers $header -Body $payload -UserAgent $userAgent
+                }
             }
 
 
