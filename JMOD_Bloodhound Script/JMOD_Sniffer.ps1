@@ -420,7 +420,7 @@ foreach($newsLink in ($searchBlock.data.children.data | Where {$_.link_flair_tex
                     elseif($lastAuthor -ne $jmodComment.Author)
                     {
                         $commentCounter = 1
-                        $parsedText += "`n&nbsp;`n**("+$jmodComment.Title+") "+$jmodComment.Author+"**`n`n- [Comment $commentCounter](https://www.reddit.com" + $jmodComment.Permalink +")`n`n"
+                        $parsedText += "`n`n**("+$jmodComment.Title+") "+$jmodComment.Author+"**`n`n- [Comment $commentCounter](https://www.reddit.com" + $jmodComment.Permalink +")`n`n"
                         $lastAuthor = $jmodComment.Author
                     }
                     else
@@ -479,7 +479,7 @@ foreach($newsLink in ($searchBlock.data.children.data | Where {$_.link_flair_tex
                 elseif($lastAuthor -ne $jmodComment.Author)
                 {
                     $commentCounter = 1
-                    $parsedText += "`n&nbsp;`n**("+$jmodComment.Title+") "+$jmodComment.Author+"**`n`n- [Comment $commentCounter](https://www.reddit.com" + $jmodComment.Permalink +")`n`n"
+                    $parsedText += "`n`n**("+$jmodComment.Title+") "+$jmodComment.Author+"**`n`n- [Comment $commentCounter](https://www.reddit.com" + $jmodComment.Permalink +")`n`n"
                     $lastAuthor = $jmodComment.Author
                 }
                 else
