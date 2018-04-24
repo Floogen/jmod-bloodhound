@@ -380,7 +380,7 @@ foreach($newsLink in ($searchBlock.data.children.data | Where {$_.link_flair_tex
     {
         #sort all linked comments by authors
         $permaLinksList = $permaLinksList | Sort-Object -Property Author
-        $parsedText = "### Bark bark!`n`nI have found the following **J-Mod** comments in this thread:`n`n"
+        $parsedText = "##### Bark bark!`n`nI have found the following **J-Mod** comments in this thread:`n`n"
         $lastAuthor = $null
         $commentCounter = 1
 
