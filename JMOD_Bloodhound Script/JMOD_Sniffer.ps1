@@ -346,7 +346,7 @@ foreach($newsLink in ($searchBlock.data.children.data | Where {$_.link_flair_tex
 
                 #append marker to end of post
                 $editTime = (Get-Date)
-                $parsedText += "`n&nbsp;`n`n**Last edited by bot: $editTime**`n`n---`n`nHi, I'm your friendly neighborhood OSRS bot.  `nI tried my best to find all the J-Mod's comments in this post.  `nInterested to see how I work? See my post [here](https://www.reddit.com/user/JMOD_Bloodhound/comments/8dronr/jmod_bloodhound_bot_github_repository/?ref=share&ref_source=link) for my GitHub repo!"
+                $parsedText += "`n&nbsp;`n`n^(**Last edited by bot: $editTime**)`n`n---`n`n^(Hi, I tried my best to find all the J-Mod's comments in this post.)  `n^(Interested to see how I work? See my post) ^[here](https://www.reddit.com/user/JMOD_Bloodhound/comments/8dronr/jmod_bloodhound_bot_github_repository/?ref=share&ref_source=link) ^(for my GitHub repo!)"
 
                 $payload = @{
                 api_type = "json"
@@ -404,7 +404,7 @@ foreach($newsLink in ($searchBlock.data.children.data | Where {$_.link_flair_tex
             }
             #append marker to end of post
             $editTime = (Get-Date)
-            $parsedText += "`n&nbsp;`n`n**Last edited by bot: $editTime**`n`n---`n`nHi, I'm your friendly neighborhood OSRS bot.  `nI tried my best to find all the J-Mod's comments in this post.  `nInterested to see how I work? See my post [here](https://www.reddit.com/user/JMOD_Bloodhound/comments/8dronr/jmod_bloodhound_bot_github_repository/?ref=share&ref_source=link) for my GitHub repo!"
+            $parsedText += "`n&nbsp;`n`n^(**Last edited by bot: $editTime**)`n`n---`n`n^(Hi, I tried my best to find all the J-Mod's comments in this post.)  `n^(Interested to see how I work? See my post) ^[here](https://www.reddit.com/user/JMOD_Bloodhound/comments/8dronr/jmod_bloodhound_bot_github_repository/?ref=share&ref_source=link) ^(for my GitHub repo!)"
 
             $payload = @{
             api_type = "json"
