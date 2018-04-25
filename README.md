@@ -12,7 +12,8 @@
 I commented the script pretty thoroughly, but some things may be confusing to read. However, if you have any questions about how my code works, please do let me know and I'll try to explain where I can. I'd advise Googling your question first however, as that often will answer things faster than I can.
 
 # To-do List
-- [x] Implement detailed comment information in the bot's post
+- [x] Implement context to JMOD comments where applicable.
+- [x] Implement detailed comment information in the bot's post.
 - [ ] Change the many try-catch calls into a function.
 - [x] Release the hound (to the public).
 
