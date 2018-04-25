@@ -66,9 +66,27 @@ function subCommentSearch($commentList)
             category = "cached"
             id = $subComment.name}
 
+                $rawCommentBody = ($subComment.body -split "`n")[0]
+
+                if($rawCommentBody.Length -gt 45)
+                {
+                    #cut it off with ...
+                    $rawCommentBody = $rawCommentBody.Substring(0,45) + "..."
+                }
+                else
+                {
+                    $rawCommentBody += "..."
+                }
+
+                if($rawCommentBody -eq "")
+                {
+                    $rawCommentBody = "No text found!"
+                }
+
             $global:permaLinksList.Add([pscustomobject]@{'Author' = $subComment.author
             'Title' = $subComment.author_flair_text
-            'Permalink' = $subComment.permalink})
+            'Permalink' = $subComment.permalink
+            'CommentBody' = $rawCommentBody})
 
             #if comment is not saved, then save it
             if($subComment.saved -eq $false)
@@ -217,9 +235,28 @@ foreach($newsLink in ($searchBlock.data.children.data | Where {$_.link_flair_tex
                     category = "cached"
                     id = $comment.name}
 
+                $rawCommentBody = ($comment.body -split "`n")[0]
+
+                if($rawCommentBody.Length -gt 45)
+                {
+                    #cut it off with ...
+                    $rawCommentBody = $rawCommentBody.Substring(0,45) + "..."
+                }
+                else
+                {
+                    $rawCommentBody += "..."
+                }
+
+                if($rawCommentBody -eq "")
+                {
+                    $rawCommentBody = "No text found!"
+                }
+
+
                 $permaLinksList.Add([pscustomobject]@{'Author' = $comment.author
                                 'Title' = $comment.author_flair_text
-                                'Permalink' = $comment.permalink})
+                                'Permalink' = $comment.permalink
+                                'CommentBody' = $rawCommentBody})
 
                 #if comment hasn't been saved it
                 if($comment.saved -eq $false)
@@ -261,9 +298,27 @@ foreach($newsLink in ($searchBlock.data.children.data | Where {$_.link_flair_tex
                     category = "cached"
                     id = $moreComment.name}
 
+                $rawCommentBody = ($moreComment.body -split "`n")[0]
+
+                if($rawCommentBody.Length -gt 45)
+                {
+                    #cut it off with ...
+                    $rawCommentBody = $rawCommentBody.Substring(0,45) + "..."
+                }
+                else
+                {
+                    $rawCommentBody += "..."
+                }
+
+                if($rawCommentBody -eq "")
+                {
+                    $rawCommentBody = "No text found!"
+                }
+
                 $permaLinksList.Add([pscustomobject]@{'Author' = $moreComment.author
                     'Title' = $moreComment.author_flair_text
-                    'Permalink' = $moreComment.permalink})
+                    'Permalink' = $moreComment.permalink
+                    'CommentBody' = $rawCommentBody})
 
                 #if comment hasn't been saved it
                 if($moreComment.saved -eq $false)
@@ -309,9 +364,27 @@ foreach($newsLink in ($searchBlock.data.children.data | Where {$_.link_flair_tex
                     category = "cached"
                     id = $comment.name}
 
-                    $permaLinksList.Add([pscustomobject]@{'Author' = $comment.author
+                $rawCommentBody = ($comment.body -split "`n")[0]
+
+                if($rawCommentBody.Length -gt 45)
+                {
+                    #cut it off with ...
+                    $rawCommentBody = $rawCommentBody.Substring(0,45) + "..."
+                }
+                else
+                {
+                    $rawCommentBody += "..."
+                }
+
+                if($rawCommentBody -eq "")
+                {
+                    $rawCommentBody = "No text found!"
+                }
+
+                $permaLinksList.Add([pscustomobject]@{'Author' = $comment.author
                                 'Title' = $comment.author_flair_text
-                                'Permalink' = $comment.permalink})
+                                'Permalink' = $comment.permalink
+                                'CommentBody' = $rawCommentBody})
 
                 #no need to do safety check for saving, as post hasn't been touched yet (first time visiting this post)
                 try
@@ -351,9 +424,26 @@ foreach($newsLink in ($searchBlock.data.children.data | Where {$_.link_flair_tex
                     category = "cached"
                     id = $moreComment.name}
 
+                $rawCommentBody = ($moreComment.body -split "`n")[0]
+
+                if($rawCommentBody.Length -gt 45)
+                {
+                    #cut it off with ...
+                    $rawCommentBody = $rawCommentBody.Substring(0,45) + "..."
+                }
+                else
+                {
+                    $rawCommentBody += "..."
+                }
+
+                if($rawCommentBody -eq "")
+                {
+                    $rawCommentBody = "No text found!"
+                }
                     $permaLinksList.Add([pscustomobject]@{'Author' = $moreComment.author
                 'Title' = $moreComment.author_flair_text
-                'Permalink' = $moreComment.permalink})
+                'Permalink' = $moreComment.permalink
+                'CommentBody' = $rawCommentBody})
 
                 #no need to do safety check for saving, as post hasn't been touched yet (first time visiting this post)
                 try
@@ -415,21 +505,24 @@ foreach($newsLink in ($searchBlock.data.children.data | Where {$_.link_flair_tex
                     if(!$lastAuthor)
                     {
                         #$parsedText += "**("+$jmodComment.Title+") "+$jmodComment.Author+"**`n`n- [Comment $commentCounter](https://www.reddit.com" + $jmodComment.Permalink +")`n`n"
-                        $parsedText += "**"+$jmodComment.Author+"**`n`n- [Comment $commentCounter](https://www.reddit.com" + $jmodComment.Permalink +")`n`n"
+                        #$parsedText += "**"+$jmodComment.Author+"**`n`n- [Comment $commentCounter](https://www.reddit.com" + $jmodComment.Permalink +")`n`n"
+                        $parsedText += "**"+$jmodComment.Author+"**`n`n- ["+$jmodComment.CommentBody+"](https://www.reddit.com" + $jmodComment.Permalink +")`n`n"
                         $lastAuthor = $jmodComment.Author
                     }
                     elseif($lastAuthor -ne $jmodComment.Author)
                     {
                         $commentCounter = 1
                         #$parsedText += "`n`n**("+$jmodComment.Title+") "+$jmodComment.Author+"**`n`n- [Comment $commentCounter](https://www.reddit.com" + $jmodComment.Permalink +")`n`n"
-                        $parsedText += "`n`n**"+$jmodComment.Author+"**`n`n- [Comment $commentCounter](https://www.reddit.com" + $jmodComment.Permalink +")`n`n"
+                        #$parsedText += "`n`n**"+$jmodComment.Author+"**`n`n- [Comment $commentCounter](https://www.reddit.com" + $jmodComment.Permalink +")`n`n"
+                        $parsedText += "`n`n**"+$jmodComment.Author+"**`n`n- ["+$jmodComment.CommentBody+"](https://www.reddit.com" + $jmodComment.Permalink +")`n`n"
                         $lastAuthor = $jmodComment.Author
                     }
                     else
                     {
                         #iterate comment counter by one, then append the comment
                         $commentCounter += 1
-                        $parsedText += "- [Comment $commentCounter](https://www.reddit.com" + $jmodComment.Permalink +")`n`n"
+                        #$parsedText += "- [Comment $commentCounter](https://www.reddit.com" + $jmodComment.Permalink +")`n`n"
+                        $parsedText += "- ["+$jmodComment.CommentBody+"](https://www.reddit.com" + $jmodComment.Permalink +")`n`n"
                     }
                 }
 
@@ -476,21 +569,24 @@ foreach($newsLink in ($searchBlock.data.children.data | Where {$_.link_flair_tex
                 if(!$lastAuthor)
                 {
                     #$parsedText += "**("+$jmodComment.Title+") "+$jmodComment.Author+"**`n`n- [Comment $commentCounter](https://www.reddit.com" + $jmodComment.Permalink +")`n`n"
-                    $parsedText += "**"+$jmodComment.Author+"**`n`n- [Comment $commentCounter](https://www.reddit.com" + $jmodComment.Permalink +")`n`n"
+                    #$parsedText += "**"+$jmodComment.Author+"**`n`n- [Comment $commentCounter](https://www.reddit.com" + $jmodComment.Permalink +")`n`n"
+                    $parsedText += "**"+$jmodComment.Author+"**`n`n- ["+$jmodComment.CommentBody+"](https://www.reddit.com" + $jmodComment.Permalink +")`n`n"
                     $lastAuthor = $jmodComment.Author
                 }
                 elseif($lastAuthor -ne $jmodComment.Author)
                 {
                     $commentCounter = 1
                     #$parsedText += "`n`n**("+$jmodComment.Title+") "+$jmodComment.Author+"**`n`n- [Comment $commentCounter](https://www.reddit.com" + $jmodComment.Permalink +")`n`n"
-                    $parsedText += "`n`n**"+$jmodComment.Author+"**`n`n- [Comment $commentCounter](https://www.reddit.com" + $jmodComment.Permalink +")`n`n"
+                    #$parsedText += "`n`n**"+$jmodComment.Author+"**`n`n- [Comment $commentCounter](https://www.reddit.com" + $jmodComment.Permalink +")`n`n"
+                    $parsedText += "`n`n**"+$jmodComment.Author+"**`n`n- ["+$jmodComment.CommentBody+"](https://www.reddit.com" + $jmodComment.Permalink +")`n`n"
                     $lastAuthor = $jmodComment.Author
                 }
                 else
                 {
                     #iterate comment counter by one, then append the comment
                     $commentCounter += 1
-                    $parsedText += "- [Comment $commentCounter](https://www.reddit.com" + $jmodComment.Permalink +")`n`n"
+                    #$parsedText += "- [Comment $commentCounter](https://www.reddit.com" + $jmodComment.Permalink +")`n`n"
+                    $parsedText += "- ["+$jmodComment.CommentBody+"](https://www.reddit.com" + $jmodComment.Permalink +")`n`n"
                 }
             }
             #append marker to end of post
