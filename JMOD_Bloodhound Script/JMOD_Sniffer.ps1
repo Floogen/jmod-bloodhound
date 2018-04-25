@@ -82,10 +82,26 @@ function subCommentSearch($commentList)
                 {
                     $rawCommentBody = "No text found!"
                 }
+            
+            #creating context for the comments if needed
+            $commentContext = ""
+            if($subComment.depth -gt 0)
+            {
+                #comment depth is greater than 3, add some context to it
+                if($subComment.depth -gt 3)
+                {
+                    #limit is greater than 3, cap it
+                    $commentContext = "?context=3"
+                }
+                else
+                {
+                    $commentContext = "?context=" + $subComment.depth
+                }
+            }
 
             $global:permaLinksList.Add([pscustomobject]@{'Author' = $subComment.author
             'Title' = $subComment.author_flair_text
-            'Permalink' = $subComment.permalink
+            'Permalink' = $subComment.permalink + $commentContext
             'CommentBody' = $rawCommentBody})
 
             #if comment is not saved, then save it
@@ -252,10 +268,26 @@ foreach($newsLink in ($searchBlock.data.children.data | Where {$_.link_flair_tex
                     $rawCommentBody = "No text found!"
                 }
 
+                #creating context for the comments if needed
+                $commentContext = ""
+                if($comment.depth -gt 0)
+                {
+                    #comment depth is greater than 3, add some context to it
+                    if($comment.depth -gt 3)
+                    {
+                        #limit is greater than 3, cap it
+                        $commentContext = "?context=3"
+                    }
+                    else
+                    {
+                        $commentContext = "?context=" + $comment.depth
+                    }
+                }
+
 
                 $permaLinksList.Add([pscustomobject]@{'Author' = $comment.author
                                 'Title' = $comment.author_flair_text
-                                'Permalink' = $comment.permalink
+                                'Permalink' = $comment.permalink + $commentContext
                                 'CommentBody' = $rawCommentBody})
 
                 #if comment hasn't been saved it
@@ -315,9 +347,25 @@ foreach($newsLink in ($searchBlock.data.children.data | Where {$_.link_flair_tex
                     $rawCommentBody = "No text found!"
                 }
 
+                #creating context for the comments if needed
+                $commentContext = ""
+                if($moreComment.depth -gt 0)
+                {
+                    #comment depth is greater than 3, add some context to it
+                    if($moreComment.depth -gt 3)
+                    {
+                        #limit is greater than 3, cap it
+                        $commentContext = "?context=3"
+                    }
+                    else
+                    {
+                        $commentContext = "?context=" + $moreComment.depth
+                    }
+                }
+
                 $permaLinksList.Add([pscustomobject]@{'Author' = $moreComment.author
                     'Title' = $moreComment.author_flair_text
-                    'Permalink' = $moreComment.permalink
+                    'Permalink' = $moreComment.permalink + $commentContext
                     'CommentBody' = $rawCommentBody})
 
                 #if comment hasn't been saved it
@@ -381,9 +429,25 @@ foreach($newsLink in ($searchBlock.data.children.data | Where {$_.link_flair_tex
                     $rawCommentBody = "No text found!"
                 }
 
+                #creating context for the comments if needed
+                $commentContext = ""
+                if($comment.depth -gt 0)
+                {
+                    #comment depth is greater than 3, add some context to it
+                    if($comment.depth -gt 3)
+                    {
+                        #limit is greater than 5, cap it
+                        $commentContext = "?context=3"
+                    }
+                    else
+                    {
+                        $commentContext = "?context=" + $comment.depth
+                    }
+                }
+
                 $permaLinksList.Add([pscustomobject]@{'Author' = $comment.author
                                 'Title' = $comment.author_flair_text
-                                'Permalink' = $comment.permalink
+                                'Permalink' = $comment.permalink + $commentContext
                                 'CommentBody' = $rawCommentBody})
 
                 #no need to do safety check for saving, as post hasn't been touched yet (first time visiting this post)
@@ -440,9 +504,25 @@ foreach($newsLink in ($searchBlock.data.children.data | Where {$_.link_flair_tex
                 {
                     $rawCommentBody = "No text found!"
                 }
+
+                #creating context for the comments if needed
+                $commentContext = ""
+                if($moreComment.depth -gt 0)
+                {
+                    #comment depth is greater than 3, add some context to it
+                    if($moreComment.depth -gt 3)
+                    {
+                        #limit is greater than 5, cap it
+                        $commentContext = "?context=3"
+                    }
+                    else
+                    {
+                        $commentContext = "?context=" + $moreComment.depth
+                    }
+                }
                     $permaLinksList.Add([pscustomobject]@{'Author' = $moreComment.author
                 'Title' = $moreComment.author_flair_text
-                'Permalink' = $moreComment.permalink
+                'Permalink' = $moreComment.permalink + $commentContext
                 'CommentBody' = $rawCommentBody})
 
                 #no need to do safety check for saving, as post hasn't been touched yet (first time visiting this post)
