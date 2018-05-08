@@ -3,7 +3,7 @@
 
 # How It Works
 1. The script is scheduled to check [/r/2007scape/](https://www.reddit.com/r/2007scape/hot) and [/r/runescape/](https://www.reddit.com/r/runescape/hot) every 5 minutes for top 100 hot posts with JMOD replies.
- - **The bot also requires that the post have more than 10 comments AND (a JMOD comment with negative comment OR more than one JMOD comment).**
+	- **The bot also requires that the post have more than 10 comments AND (a JMOD comment with negative comment OR more than one JMOD comment).**
 2. After finding a match, the script caches the post's ID via Reddit's save function to verify if a post has been touched already.
 3. If a post hasn't been visted previously, it will create a new comment containing a list of each JMOD's comments on that particular thread.
 4. If a post has been visited previously AND there are new JMOD comments, the script will update the previous comment it had made with the new information.
