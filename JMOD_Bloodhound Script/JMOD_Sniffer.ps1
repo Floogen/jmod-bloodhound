@@ -184,7 +184,8 @@ function GetAndPost($infoBlock, $header, $subReddit)
     
             $postInfo = Invoke-RestMethod -uri $sniffedPostUri -Method GET -Headers $header -UserAgent $userAgent
         }
-
+        #flag to see if JMOD comment is currently in top 25? top level comments
+        $jmodInTopLevel = $false
         #if post was previously touched (saved)
             #assume that the comment's already reached threshold for trigger (low karma or multiple J-MOD posts)
         if($postSavedStatus)
@@ -203,6 +204,7 @@ function GetAndPost($infoBlock, $header, $subReddit)
                 #if comment has flair of a J-MOD, then add it to the permalink list and save it
                 if($comment.author_flair_css_class -match "jagexmod" -or $comment.author_flair_css_class -match "modmatk" -or $comment.author_flair_css_class -match "mod-jagex")
                 {
+                    $jmodInTopLevel = $true
                     $payload = @{
                         category = "cached"
                         id = $comment.name}
@@ -366,6 +368,7 @@ function GetAndPost($infoBlock, $header, $subReddit)
                 #if comment has flair of a J-MOD, then add it to the permalink list and save it
                 if(($comment.author_flair_css_class -match "jagexmod" -or $comment.author_flair_css_class -match "modmatk" -or $comment.author_flair_css_class -match "mod-jagex") -and $comment.saved -eq $false)
                 {
+                    $jmodInTopLevel = $true
                     $payload = @{
                         category = "cached"
                         id = $comment.name}
@@ -506,7 +509,7 @@ function GetAndPost($infoBlock, $header, $subReddit)
         }
 
         #now check if the post has valid conditions OR if post has been saved (conditions have been already passed once)
-        if((PostConditionCheck -jmodComments $global:permaLinksList) -eq $true -or $postSavedStatus)
+        if((PostConditionCheck -jmodComments $global:permaLinksList) -eq $true -or $postSavedStatus -or !$jmodInTopLevel)
         {
             #if any comments were saved, proceed
             if($global:permaLinksList)
