@@ -155,7 +155,7 @@ function SearchSubComments($commentList)
 
 function GetAndPost($infoBlock, $header, $subReddit)
 {
-    foreach($newsLink in ($infoBlock.data.children.data))
+    foreach($newsLink in ($infoBlock.data.children.data) | Where {([int]$_.num_comments) -gt 10})
     {
         #old flag/filter:  | Where {$_.link_flair_text -match "J-MOD" -or $_.author_flair_css_class -match "jagexmod" -or $_.author_flair_css_class -match "modmatk" -or $_.author_flair_css_class -match "mod-jagex"}
         #list of all permalinks for valid J-MOD comments
