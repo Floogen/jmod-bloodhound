@@ -155,8 +155,9 @@ function SearchSubComments($commentList)
 
 function GetAndPost($infoBlock, $header, $subReddit)
 {
-    foreach($newsLink in ($infoBlock.data.children.data | Where {$_.link_flair_text -match "J-MOD" -or $_.author_flair_css_class -match "jagexmod" -or $_.author_flair_css_class -match "modmatk" -or $_.author_flair_css_class -match "mod-jagex"}))
+    foreach($newsLink in ($infoBlock.data.children.data))
     {
+        #old flag/filter:  | Where {$_.link_flair_text -match "J-MOD" -or $_.author_flair_css_class -match "jagexmod" -or $_.author_flair_css_class -match "modmatk" -or $_.author_flair_css_class -match "mod-jagex"}
         #list of all permalinks for valid J-MOD comments
         $global:permaLinksList = New-Object System.Collections.Generic.List[System.Object]
         #get post's save status
