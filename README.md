@@ -13,7 +13,7 @@
 I commented the script pretty thoroughly, but some things may be confusing to read. However, if you have any questions about how my code works, please do let me know and I'll try to explain where I can. I'd advise Googling your question first however, as that often will answer things faster than I can.
 
 # To-do List
-- [x] Add triggers to bot (more than 1 J-MOD comment OR a J-MOD comment with a hardset negative karma.
+- [x] Add triggers to bot (more than 10 comments AND (more than 1 J-MOD comment OR a J-MOD comment with a hardset negative karma)).
 - [x] Add [/r/runescape/](https://www.reddit.com/r/runescape/hot) to bot's search range.
 - [x] Change main body of script into a function for versatile use with OSRS and RS3.
 - [x] Implement context to JMOD comments where applicable.
