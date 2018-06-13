@@ -33,7 +33,6 @@ if($netAssembly)
         }
     }
 }
-#TO-DO: Implement karma/J-MOD comment count for bot's trigger to post a comment (use $postInfo.data.children.data.score) < -10?
 
 #end of network related calls
 
@@ -43,10 +42,10 @@ $permaLinksList = New-Object System.Collections.Generic.List[System.Object]
 function Get-RedditToken 
 {
     $credentials = @{
-    grant_type = "password"
-    username = $Global:username
-    password = $Global:password
-    }
+                        grant_type = "password"
+                        username = $Global:username
+                        password = $Global:password
+                    }
     $Global:token = Invoke-RestMethod -Method Post -Uri "https://www.reddit.com/api/v1/access_token" -Body $credentials -ContentType 'application/x-www-form-urlencoded' -Credential $Global:creds
 }
 
@@ -88,8 +87,9 @@ function SearchSubComments($commentList)
         if($subComment.author_flair_css_class -match "jagexmod" -or $subComment.author_flair_css_class -match "modmatk" -or $subComment.author_flair_css_class -match "mod-jagex")
         {
             $payload = @{
-            category = "cached"
-            id = $subComment.name}
+                            category = "cached"
+                            id = $subComment.name
+                        }
 
                 $rawCommentBody = ($subComment.body -split "`n")[0]
 
@@ -141,9 +141,7 @@ function SearchSubComments($commentList)
                 {
                     Write-Host "Token expired, renewing..." -ForegroundColor Red
                     Get-RedditToken #updates token value
-                    $header = @{ 
-                    authorization = $global:token.token_type + " " + $global:token.access_token
-                    }
+                    $header = @{authorization = $global:token.token_type + " " + $global:token.access_token}
                     Write-Host "Renewed Access Code." -ForegroundColor Green
 
                     $saveBlock = Invoke-RestMethod -uri "https://oauth.reddit.com/api/save" -Method POST -Headers $global:header -Body $payload -UserAgent $global:userAgent
@@ -157,7 +155,6 @@ function GetAndPost($infoBlock, $header, $subReddit)
 {
     foreach($newsLink in ($infoBlock.data.children.data) | Where {([int]$_.num_comments) -gt 10})
     {
-        #old flag/filter:  | Where {$_.link_flair_text -match "J-MOD" -or $_.author_flair_css_class -match "jagexmod" -or $_.author_flair_css_class -match "modmatk" -or $_.author_flair_css_class -match "mod-jagex"}
         #list of all permalinks for valid J-MOD comments
         $global:permaLinksList = New-Object System.Collections.Generic.List[System.Object]
         #get post's save status
@@ -177,17 +174,17 @@ function GetAndPost($infoBlock, $header, $subReddit)
         {
             Write-Host "Token expired, renewing..." -ForegroundColor Red
             Get-RedditToken #updates token value
-            $header = @{ 
-            authorization = $token.token_type + " " + $token.access_token
-            }
+            $header = @{authorization = $token.token_type + " " + $token.access_token}
             Write-Host "Renewed Access Code." -ForegroundColor Green
     
             $postInfo = Invoke-RestMethod -uri $sniffedPostUri -Method GET -Headers $header -UserAgent $userAgent
         }
         #flag to see if JMOD comment is currently in top 25? top level comments
         $jmodInTopLevel = $false
+
         #if post was previously touched (saved)
             #assume that the comment's already reached threshold for trigger (low karma or multiple J-MOD posts)
+
         if($postSavedStatus)
         {
             #foreach comment in the post
@@ -201,13 +198,15 @@ function GetAndPost($infoBlock, $header, $subReddit)
                         SearchSubComments -commentList $subComment
                     }
                 }
+
                 #if comment has flair of a J-MOD, then add it to the permalink list and save it
                 if($comment.author_flair_css_class -match "jagexmod" -or $comment.author_flair_css_class -match "modmatk" -or $comment.author_flair_css_class -match "mod-jagex")
                 {
                     $jmodInTopLevel = $true
                     $payload = @{
-                        category = "cached"
-                        id = $comment.name}
+                                    category = "cached"
+                                    id = $comment.name
+                                }
 
                     $rawCommentBody = ($comment.body -split "`n")[0]
 
@@ -228,6 +227,7 @@ function GetAndPost($infoBlock, $header, $subReddit)
 
                     #creating context for the comments if needed
                     $commentContext = ""
+
                     if($comment.depth -gt 0)
                     {
                         #comment depth is greater than 3, add some context to it
@@ -244,10 +244,10 @@ function GetAndPost($infoBlock, $header, $subReddit)
 
 
                     $global:permaLinksList.Add([pscustomobject]@{'Author' = $comment.author
-                                    'Title' = $comment.author_flair_text
-                                    'Permalink' = $comment.permalink + $commentContext
-                                    'CommentBody' = $rawCommentBody
-                                    'CommentScore' = $comment.score})
+                    'Title' = $comment.author_flair_text
+                    'Permalink' = $comment.permalink + $commentContext
+                    'CommentBody' = $rawCommentBody
+                    'CommentScore' = $comment.score})
 
                     #if comment hasn't been saved it
                     if($comment.saved -eq $false)
@@ -260,9 +260,7 @@ function GetAndPost($infoBlock, $header, $subReddit)
                         {
                             Write-Host "Token expired, renewing..." -ForegroundColor Red
                             Get-RedditToken #updates token value
-                            $header = @{ 
-                                authorization = $global:token.token_type + " " + $global:token.access_token
-                                }
+                            $header = @{authorization = $global:token.token_type + " " + $global:token.access_token}
                             Write-Host "Renewed Access Code." -ForegroundColor Green
     
                             $saveBlock = Invoke-RestMethod -uri "https://oauth.reddit.com/api/save" -Method POST -Headers $global:header -Body $payload -UserAgent $global:userAgent
@@ -282,12 +280,14 @@ function GetAndPost($infoBlock, $header, $subReddit)
                         SearchSubComments -commentList $subComment
                     }
                 }
+
                 #if comment has flair of a J-MOD, then add it to the permalink list and save it
                 if($moreComment.author_flair_css_class -match "jagexmod" -or $moreComment.author_flair_css_class -match "modmatk" -or $moreComment.author_flair_css_class -match "mod-jagex")
                 {
                     $payload = @{
-                        category = "cached"
-                        id = $moreComment.name}
+                                    category = "cached"
+                                    id = $moreComment.name
+                                }
 
                     $rawCommentBody = ($moreComment.body -split "`n")[0]
 
@@ -308,6 +308,7 @@ function GetAndPost($infoBlock, $header, $subReddit)
 
                     #creating context for the comments if needed
                     $commentContext = ""
+
                     if($moreComment.depth -gt 0)
                     {
                         #comment depth is greater than 3, add some context to it
@@ -323,10 +324,10 @@ function GetAndPost($infoBlock, $header, $subReddit)
                     }
 
                     $global:permaLinksList.Add([pscustomobject]@{'Author' = $moreComment.author
-                        'Title' = $moreComment.author_flair_text
-                        'Permalink' = $moreComment.permalink + $commentContext
-                        'CommentBody' = $rawCommentBody
-                        'CommentScore' = $moreComment.score})
+                    'Title' = $moreComment.author_flair_text
+                    'Permalink' = $moreComment.permalink + $commentContext
+                    'CommentBody' = $rawCommentBody
+                    'CommentScore' = $moreComment.score})
 
                     #if comment hasn't been saved it
                     if($moreComment.saved -eq $false)
@@ -339,9 +340,7 @@ function GetAndPost($infoBlock, $header, $subReddit)
                         {
                             Write-Host "Token expired, renewing..." -ForegroundColor Red
                             Get-RedditToken #updates token value
-                            $header = @{ 
-                                authorization = $global:token.token_type + " " + $global:token.access_token
-                                }
+                            $header = @{authorization = $global:token.token_type + " " + $global:token.access_token}
                             Write-Host "Renewed Access Code." -ForegroundColor Green
     
                             $saveBlock = Invoke-RestMethod -uri "https://oauth.reddit.com/api/save" -Method POST -Headers $global:header -Body $payload -UserAgent $global:userAgent
@@ -370,8 +369,9 @@ function GetAndPost($infoBlock, $header, $subReddit)
                 {
                     $jmodInTopLevel = $true
                     $payload = @{
-                        category = "cached"
-                        id = $comment.name}
+                                    category = "cached"
+                                    id = $comment.name
+                                }
 
                     $rawCommentBody = ($comment.body -split "`n")[0]
 
@@ -407,10 +407,10 @@ function GetAndPost($infoBlock, $header, $subReddit)
                     }
 
                     $global:permaLinksList.Add([pscustomobject]@{'Author' = $comment.author
-                                    'Title' = $comment.author_flair_text
-                                    'Permalink' = $comment.permalink + $commentContext
-                                    'CommentBody' = $rawCommentBody
-                                    'CommentScore' = $comment.score})
+                    'Title' = $comment.author_flair_text
+                    'Permalink' = $comment.permalink + $commentContext
+                    'CommentBody' = $rawCommentBody
+                    'CommentScore' = $comment.score})
 
                     #no need to do safety check for saving, as post hasn't been touched yet (first time visiting this post)
                     try
@@ -421,9 +421,7 @@ function GetAndPost($infoBlock, $header, $subReddit)
                     {
                         Write-Host "Token expired, renewing..." -ForegroundColor Red
                         Get-RedditToken #updates token value
-                        $header = @{ 
-                            authorization = $global:token.token_type + " " + $global:token.access_token
-                            }
+                        $header = @{authorization = $global:token.token_type + " " + $global:token.access_token}
                         Write-Host "Renewed Access Code." -ForegroundColor Green
     
                         $saveBlock = Invoke-RestMethod -uri "https://oauth.reddit.com/api/save" -Method POST -Headers $global:header -Body $payload -UserAgent $global:userAgent
@@ -447,8 +445,9 @@ function GetAndPost($infoBlock, $header, $subReddit)
                 if(($moreComment.author_flair_css_class -match "jagexmod" -or $moreComment.author_flair_css_class -match "modmatk" -or $moreComment.author_flair_css_class -match "mod-jagex") -and $moreComment.saved -eq $false)
                 {
                     $payload = @{
-                        category = "cached"
-                        id = $moreComment.name}
+                                    category = "cached"
+                                    id = $moreComment.name
+                                }
 
                     $rawCommentBody = ($moreComment.body -split "`n")[0]
 
@@ -482,7 +481,8 @@ function GetAndPost($infoBlock, $header, $subReddit)
                             $commentContext = "?context=" + $moreComment.depth
                         }
                     }
-                        $global:permaLinksList.Add([pscustomobject]@{'Author' = $moreComment.author
+
+                    $global:permaLinksList.Add([pscustomobject]@{'Author' = $moreComment.author
                     'Title' = $moreComment.author_flair_text
                     'Permalink' = $moreComment.permalink + $commentContext
                     'CommentBody' = $rawCommentBody
@@ -497,9 +497,7 @@ function GetAndPost($infoBlock, $header, $subReddit)
                     {
                         Write-Host "Token expired, renewing..." -ForegroundColor Red
                         Get-RedditToken #updates token value
-                        $header = @{ 
-                        authorization = $global:token.token_type + " " + $global:token.access_token
-                        }
+                        $header = @{authorization = $global:token.token_type + " " + $global:token.access_token}
                         Write-Host "Renewed Access Code." -ForegroundColor Green
     
                         $saveBlock = Invoke-RestMethod -uri "https://oauth.reddit.com/api/save" -Method POST -Headers $global:header -Body $payload -UserAgent $global:userAgent
@@ -550,16 +548,12 @@ function GetAndPost($infoBlock, $header, $subReddit)
                             #if lastAuthor doesn't exist, then this is the first J-MOD comment in the list (don't iterate counter from 1)
                             if(!$lastAuthor)
                             {
-                                #$parsedText += "**("+$jmodComment.Title+") "+$jmodComment.Author+"**`n`n- [Comment $commentCounter](https://www.reddit.com" + $jmodComment.Permalink +")`n`n"
-                                #$parsedText += "**"+$jmodComment.Author+"**`n`n- [Comment $commentCounter](https://www.reddit.com" + $jmodComment.Permalink +")`n`n"
                                 $parsedText += "**"+$jmodComment.Author+"**`n`n- ["+$jmodComment.CommentBody+"](https://www.reddit.com" + $jmodComment.Permalink +")`n`n"
                                 $lastAuthor = $jmodComment.Author
                             }
                             elseif($lastAuthor -ne $jmodComment.Author)
                             {
                                 $commentCounter = 1
-                                #$parsedText += "`n`n**("+$jmodComment.Title+") "+$jmodComment.Author+"**`n`n- [Comment $commentCounter](https://www.reddit.com" + $jmodComment.Permalink +")`n`n"
-                                #$parsedText += "`n`n**"+$jmodComment.Author+"**`n`n- [Comment $commentCounter](https://www.reddit.com" + $jmodComment.Permalink +")`n`n"
                                 $parsedText += "`n`n**"+$jmodComment.Author+"**`n`n- ["+$jmodComment.CommentBody+"](https://www.reddit.com" + $jmodComment.Permalink +")`n`n"
                                 $lastAuthor = $jmodComment.Author
                             }
@@ -567,7 +561,6 @@ function GetAndPost($infoBlock, $header, $subReddit)
                             {
                                 #iterate comment counter by one, then append the comment
                                 $commentCounter += 1
-                                #$parsedText += "- [Comment $commentCounter](https://www.reddit.com" + $jmodComment.Permalink +")`n`n"
                                 $parsedText += "- ["+$jmodComment.CommentBody+"](https://www.reddit.com" + $jmodComment.Permalink +")`n`n"
                             }
                         }
@@ -577,10 +570,10 @@ function GetAndPost($infoBlock, $header, $subReddit)
                         $parsedText += "`n&nbsp;`n`n^(**Last edited by bot: $editTime**)`n`n---`n`n^(Hi, I tried my best to find all the J-Mod's comments in this post.)  `n^(Interested to see how I work? See my post) ^[here](https://www.reddit.com/user/JMOD_Bloodhound/comments/8dronr/jmod_bloodhound_bot_github_repository/?ref=share&ref_source=link) ^(for my GitHub repo!)"
 
                         $payload = @{
-                        api_type = "json"
-                        text = $parsedText
-                        thing_id= $previousPostID
-                        }
+                                        api_type = "json"
+                                        text = $parsedText
+                                        thing_id= $previousPostID
+                                    }
 
                         #edit the post
                         Write-Host "Editing post... $previousPostID"
@@ -592,9 +585,8 @@ function GetAndPost($infoBlock, $header, $subReddit)
                         {
                             Write-Host "Token expired, renewing..." -ForegroundColor Red
                             Get-RedditToken #updates token value
-                            $header = @{ 
-                            authorization = $token.token_type + " " + $token.access_token
-                            }
+                            $header = @{authorization = $token.token_type + " " + $token.access_token}
+
                             Write-Host "Renewed Access Code." -ForegroundColor Green
                             $null = Invoke-RestMethod -uri "https://oauth.reddit.com/api/editusertext" -Method Post -Headers $header -Body $payload -UserAgent $userAgent
                         }
@@ -614,16 +606,12 @@ function GetAndPost($infoBlock, $header, $subReddit)
                         #if lastAuthor doesn't exist, then this is the first J-MOD comment in the list (don't iterate counter from 1)
                         if(!$lastAuthor)
                         {
-                            #$parsedText += "**("+$jmodComment.Title+") "+$jmodComment.Author+"**`n`n- [Comment $commentCounter](https://www.reddit.com" + $jmodComment.Permalink +")`n`n"
-                            #$parsedText += "**"+$jmodComment.Author+"**`n`n- [Comment $commentCounter](https://www.reddit.com" + $jmodComment.Permalink +")`n`n"
                             $parsedText += "**"+$jmodComment.Author+"**`n`n- ["+$jmodComment.CommentBody+"](https://www.reddit.com" + $jmodComment.Permalink +")`n`n"
                             $lastAuthor = $jmodComment.Author
                         }
                         elseif($lastAuthor -ne $jmodComment.Author)
                         {
                             $commentCounter = 1
-                            #$parsedText += "`n`n**("+$jmodComment.Title+") "+$jmodComment.Author+"**`n`n- [Comment $commentCounter](https://www.reddit.com" + $jmodComment.Permalink +")`n`n"
-                            #$parsedText += "`n`n**"+$jmodComment.Author+"**`n`n- [Comment $commentCounter](https://www.reddit.com" + $jmodComment.Permalink +")`n`n"
                             $parsedText += "`n`n**"+$jmodComment.Author+"**`n`n- ["+$jmodComment.CommentBody+"](https://www.reddit.com" + $jmodComment.Permalink +")`n`n"
                             $lastAuthor = $jmodComment.Author
                         }
@@ -631,7 +619,6 @@ function GetAndPost($infoBlock, $header, $subReddit)
                         {
                             #iterate comment counter by one, then append the comment
                             $commentCounter += 1
-                            #$parsedText += "- [Comment $commentCounter](https://www.reddit.com" + $jmodComment.Permalink +")`n`n"
                             $parsedText += "- ["+$jmodComment.CommentBody+"](https://www.reddit.com" + $jmodComment.Permalink +")`n`n"
                         }
                     }
@@ -640,10 +627,10 @@ function GetAndPost($infoBlock, $header, $subReddit)
                     $parsedText += "`n&nbsp;`n`n^(**Last edited by bot: $editTime**)`n`n---`n`n^(Hi, I tried my best to find all the J-Mod's comments in this post.)  `n^(Interested to see how I work? See my post) ^[here](https://www.reddit.com/user/JMOD_Bloodhound/comments/8dronr/jmod_bloodhound_bot_github_repository/?ref=share&ref_source=link) ^(for my GitHub repo!)"
 
                     $payload = @{
-                    api_type = "json"
-                    text = $parsedText
-                    thing_id= "t3_$postID"
-                    }
+                                    api_type = "json"
+                                    text = $parsedText
+                                    thing_id= "t3_$postID"
+                                }
 
                     #comment on the post now
                     Write-Host "Creating comment on... $postID"
@@ -661,8 +648,7 @@ function GetAndPost($infoBlock, $header, $subReddit)
                         {
                             Write-Host "Token expired, renewing..." -ForegroundColor Red
                             Get-RedditToken #updates token value
-                            $header = @{ 
-                            authorization = $token.token_type + " " + $token.access_token}
+                            $header = @{authorization = $token.token_type + " " + $token.access_token}
                             Write-Host "Renewed Access Code." -ForegroundColor Green
                             $houndPost = Invoke-RestMethod -uri "https://oauth.reddit.com/api/comment" -Method Post -Headers $header -Body $payload -UserAgent $userAgent
                         }
@@ -671,9 +657,9 @@ function GetAndPost($infoBlock, $header, $subReddit)
 
                     #save newly posted comment
                     $payload = @{
-                        category = "cached"
-                        id = $houndPost.json.data.things.data.name
-                    }
+                                    category = "cached"
+                                    id = $houndPost.json.data.things.data.name
+                                }
 
                     #save bot's posted comment
                     try
@@ -684,9 +670,7 @@ function GetAndPost($infoBlock, $header, $subReddit)
                     {
                         Write-Host "Token expired, renewing..." -ForegroundColor Red
                         Get-RedditToken #updates token value
-                        $header = @{ 
-                        authorization = $token.token_type + " " + $token.access_token
-                        }
+                        $header = @{authorization = $token.token_type + " " + $token.access_token}
                         Write-Host "Renewed Access Code." -ForegroundColor Green
     
                         $saveBlock = Invoke-RestMethod -uri "https://oauth.reddit.com/api/save" -Method POST -Headers $header -Body $payload -UserAgent $userAgent
@@ -699,9 +683,8 @@ function GetAndPost($infoBlock, $header, $subReddit)
             { 
                 Write-Host "Caching and posting to" $newsLink.title
                 $payload = @{
-                            category = "cached"
-                            id = $newsLink.name
-
+                                category = "cached"
+                                id = $newsLink.name
                             }
                 try
                 {
@@ -711,8 +694,7 @@ function GetAndPost($infoBlock, $header, $subReddit)
                 {
                     Write-Host "Token expired, renewing..." -ForegroundColor Red
                     Get-RedditToken #updates token value
-                    $header = @{ 
-                    authorization = $token.token_type + " " + $token.access_token}
+                    $header = @{authorization = $token.token_type + " " + $token.access_token}
                     Write-Host "Renewed Access Code." -ForegroundColor Green
                 }
            
@@ -749,9 +731,7 @@ $clientSecret = ConvertTo-SecureString ($credFile.clientSecret) -AsPlainText -Fo
 $creds = New-Object -TypeName System.management.Automation.PSCredential -ArgumentList $clientID, $clientSecret
  
 #authorization header
-$header = @{ 
-    authorization = $token.token_type + " " + $token.access_token
-    }
+$header = @{authorization = $token.token_type + " " + $token.access_token}
 
 #check if cached token is valid
 try
@@ -763,9 +743,7 @@ catch
 {
     Write-Host "Token is no longer valid, renewing..." -ForegroundColor Red
     Get-RedditToken #updates token value
-    $header = @{ 
-    authorization = $token.token_type + " " + $token.access_token
-    }
+    $header = @{authorization = $token.token_type + " " + $token.access_token}
     Write-Host "Renewed Access Code." -ForegroundColor Green
 }
 
@@ -773,7 +751,7 @@ catch
 $payload = @{limit = '100'}
 
 #attempt to search the new posts, if fails reattempt to get token (as it may have expired)
-    #TO DO: rewrite this for smarter error checking, but in most cases it will be the token expiring
+    #TO-DO: rewrite this for smarter error checking, but in most cases it will be the token expiring
     #since the script is running once every 5 minutes to check against new posts (and there doesn't seem to be a way to check when a token will expire other than tracking it yourself)
         #we'll just do a lazy try-catch for each API call
 
@@ -786,9 +764,7 @@ catch
 {
     Write-Host "Token expired, renewing..." -ForegroundColor Red
     Get-RedditToken #updates token value
-    $header = @{ 
-    authorization = $token.token_type + " " + $token.access_token
-    }
+    $header = @{authorization = $token.token_type + " " + $token.access_token}
     Write-Host "Renewed Access Code." -ForegroundColor Green
     
     $searchBlock = Invoke-RestMethod -uri "https://oauth.reddit.com/r/2007scape/hot" -Method Get -Headers $header -Body $payload -UserAgent $userAgent
@@ -806,9 +782,7 @@ catch
 {
     Write-Host "Token expired, renewing..." -ForegroundColor Red
     Get-RedditToken #updates token value
-    $header = @{ 
-    authorization = $token.token_type + " " + $token.access_token
-    }
+    $header = @{authorization = $token.token_type + " " + $token.access_token}
     Write-Host "Renewed Access Code." -ForegroundColor Green
     
     $searchBlock = Invoke-RestMethod -uri "https://oauth.reddit.com/r/runescape/hot" -Method Get -Headers $header -Body $payload -UserAgent $userAgent
