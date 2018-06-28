@@ -98,12 +98,7 @@ function SearchSubComments($commentList)
                     #cut it off with ...
                     $rawCommentBody = $rawCommentBody.Substring(0,45) + "..."
                 }
-                else
-                {
-                    $rawCommentBody += "..."
-                }
-
-                if($rawCommentBody -eq "")
+                elseif($rawCommentBody -eq "")
                 {
                     $rawCommentBody = "No text found!"
                 }
@@ -215,12 +210,7 @@ function GetAndPost($infoBlock, $header, $subReddit)
                         #cut it off with ...
                         $rawCommentBody = $rawCommentBody.Substring(0,45) + "..."
                     }
-                    else
-                    {
-                        $rawCommentBody += "..."
-                    }
-
-                    if($rawCommentBody -eq "")
+                    elseif($rawCommentBody -eq "")
                     {
                         $rawCommentBody = "No text found!"
                     }
@@ -296,12 +286,7 @@ function GetAndPost($infoBlock, $header, $subReddit)
                         #cut it off with ...
                         $rawCommentBody = $rawCommentBody.Substring(0,45) + "..."
                     }
-                    else
-                    {
-                        $rawCommentBody += "..."
-                    }
-
-                    if($rawCommentBody -eq "")
+                    elseif($rawCommentBody -eq "")
                     {
                         $rawCommentBody = "No text found!"
                     }
@@ -380,12 +365,7 @@ function GetAndPost($infoBlock, $header, $subReddit)
                         #cut it off with ...
                         $rawCommentBody = $rawCommentBody.Substring(0,45) + "..."
                     }
-                    else
-                    {
-                        $rawCommentBody += "..."
-                    }
-
-                    if($rawCommentBody -eq "")
+                    elseif($rawCommentBody -eq "")
                     {
                         $rawCommentBody = "No text found!"
                     }
@@ -456,12 +436,7 @@ function GetAndPost($infoBlock, $header, $subReddit)
                         #cut it off with ...
                         $rawCommentBody = $rawCommentBody.Substring(0,45) + "..."
                     }
-                    else
-                    {
-                        $rawCommentBody += "..."
-                    }
-
-                    if($rawCommentBody -eq "")
+                    elseif($rawCommentBody -eq "")
                     {
                         $rawCommentBody = "No text found!"
                     }
