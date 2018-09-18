@@ -350,7 +350,7 @@ function GetAndPost($infoBlock, $header, $subReddit)
                 }
 
                 #if comment has flair of a J-MOD, then add it to the permalink list and save it
-                if(($comment.author_flair_css_class -match "jagexmod" -or $comment.author_flair_css_class -match "modmatk" -or $comment.author_flair_css_class -match "mod-jagex") -and $comment.saved -eq $false)
+                if($comment.author_flair_css_class -match "jagexmod" -or $comment.author_flair_css_class -match "modmatk" -or $comment.author_flair_css_class -match "mod-jagex")
                 {
                     $jmodInTopLevel = $true
                     $payload = @{
