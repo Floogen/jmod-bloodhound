@@ -10,6 +10,3 @@
 !*.py
 !/JMOD_Bloodhound Script - Python
 !/JMOD_Bloodhound Script - PowerShell
-
-#Exclude test files
-JMOD_Bloodhound Script/JMOD_Sniffer_Test.ps1
