@@ -1,6 +1,14 @@
-# Prerequisites
-*.d
+# Ignore everything
 
-#credential files
-*.csv
+*
+
+# But not these files...
+
+!.gitignore
+
+!*.ps1
+!*.py
+!/JMOD_Bloodhound Script - Python
+
+#Exclude test files
 JMOD_Bloodhound Script/JMOD_Sniffer_Test.ps1
