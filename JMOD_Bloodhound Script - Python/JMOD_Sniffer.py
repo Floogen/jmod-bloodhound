@@ -3,8 +3,12 @@ import time
 
 
 def comment_check(comment_list):
-    if len(comment_list) > 0:
+    if len(comment_list) > 1:
         return True
+    for comment in comment_list:
+        if comment.score < 0:
+            return True
+    return False
 
 
 def find_jmod_comments(post):
@@ -25,12 +29,24 @@ def find_jmod_comments(post):
     return comment_list
 
 
-reddit = praw.Reddit('JMOD_Bloodhound', user_agent='User Agent - JMOD_Bloodhound PS Script')
+def create_comment(target_comments, bot_comments):
+    for comment in bot_comments:
+        if comment.link_id == target_comments[0].link_id:
+            return True
+    return None
 
+
+reddit = praw.Reddit('JMOD_Bloodhound', user_agent='User Agent - JMOD_Bloodhound PS Script')
 subreddit = reddit.subreddit('2007scape')
+
+bot_list = []
+
+for comment in reddit.redditor('JMOD_Bloodhound').comments.new(limit=None):
+    bot_list.append(comment)
 
 for submission in subreddit.hot(limit=1):
     print(submission.title)
     jmod_list = (find_jmod_comments(submission))
     if comment_check(jmod_list):
-        print("JMOD comments be ere mateys")
+        if create_comment(jmod_list, bot_list):
+            print("JMOD comments be ere mateys")
