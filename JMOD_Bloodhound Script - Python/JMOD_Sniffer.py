@@ -1,7 +1,8 @@
 import praw
 import time
-from datetime import datetime
 import operator
+import re
+from datetime import datetime
 
 
 def comment_check(comment_list):
@@ -32,18 +33,18 @@ def find_jmod_comments(post):
     return comment_list
 
 
-def create_comment(target_comments, bot_comments):
-    post_id = 'null'  # change to: target_comments[0].link_id
+def create_comment(target_comments, bot_comments, archived_posts):
+    post_id = '9iiayk'  # change to: target_comments[0].submission.id
 
     for comment in bot_comments:
-        if comment.link_id == post_id:
+        if comment.submission.id == post_id:
             # bot has commented here before, edit the comment
-            return edit_comment(target_comments, comment)
+            return edit_comment(target_comments, comment, archived_posts)
 
     # create comment instead, as no previous comment was found
 
-    posted_comment = reddit.submission(id='9iiayk').reply(format_comment(target_comments))  # change to: id=post_id
-    formatted_comment_body = format_post(target_comments, post_id, posted_comment)
+    posted_comment = reddit.submission(id='9iiayk').reply(format_comment(target_comments, True))  # change to:id=post_id
+    formatted_comment_body = format_post(target_comments, posted_comment)
 
     # create archive of comment on subreddit TrackedJMODComments
     # have post ID in the archive subreddit contain the post name of original target
@@ -53,11 +54,28 @@ def create_comment(target_comments, bot_comments):
 
     if len(posted_comment.submission.title) > 40:
         title = posted_comment.submission.title[:40] + '...'
-    title = '[' + posted_comment.subreddit.display_name + '] (ID:' + posted_comment.link_id + ') ' \
+    title = '[' + posted_comment.subreddit.display_name + '] (ID:' + posted_comment.submission.id + ') ' \
             + 'JMOD Comments On Thread: ' + title
 
     archive_post_comment(title, formatted_comment_body, target_comments)
     return True
+
+
+def edit_comment(target_comments, past_comment, archived_posts):
+    print('editing comment')
+
+    # edit archived, alert of any edits
+    # get the archived post id of this submission
+    arch_post = None
+
+    for post in archived_posts:
+        if re.search(r"ID:(.*?)\)", post.title).group(1) == past_comment.submission.id:
+            arch_post = post
+
+    # call format_comment and add additional parameter for initialPass?
+    # that way it can have logic for flagging comments that have been edited since last pass through
+    formatted_comment_body = format_comment(target_comments, False, arch_post)
+    return None
 
 
 def archive_post_comment(title, post_body, target_comments):
@@ -66,37 +84,33 @@ def archive_post_comment(title, post_body, target_comments):
     for comment in target_comments:
         if not comment.edited:
             ts = str(datetime.fromtimestamp(comment.created_utc))
-            archived_comment = "ID:[" + comment.id + "]\n\nComment by: **" + comment.author.name \
-                               + "**\n\nCreated on: **" + ts + "**\n\n---\n\n" + comment.body
+            archived_comment = "ID:[" + comment.id + "]\n\nCreated on: **" + ts \
+                               + "**\n\nComment by: **" + comment.author.name + "**\n\n---\n\n" + comment.body \
+                               + '\n\n---'
         else:
             ts = str(datetime.fromtimestamp(comment.edited))
-            archived_comment = "ID:[" + comment.id + "]\n\nComment by: **" + comment.author.name \
-                               + "**\n\nEdited on: **" + ts + "**\n\n---\n\n" + comment.body
+            archived_comment = "ID:[" + comment.id + "]\n\nEdited on: **" + ts \
+                               + "**\n\nComment by: **" + comment.author.name + "**\n\n---\n\n" + comment.body \
+                               + '\n\n---'
 
-    reddit.submission(id=archived_post.id).reply(archived_comment)
+        reddit.submission(id=archived_post.id).reply(archived_comment)
+
     return None
 
 
-def edit_comment(target_comments, past_comment, title):
-    print('editing comment')
-
-    # edit archived, alert of any edits
-    # get all the archived posts once from new filter?
-    return None
-
-
-def format_post(target_comments, post_id, posted_comment):
+def format_post(target_comments, posted_comment):
     previous_author_name = target_comments[0].author.name
 
-    bot_post_body = '^(ID:[' + posted_comment.submission.id \
-                    + '])\n# I have found the following **J-Mod** comments on the thread [' \
+    bot_post_body = '# I have found the following **J-Mod** comments on the thread [' \
                     + posted_comment.submission.title + '](' + posted_comment.submission.permalink + ')\n\n**'\
                     + previous_author_name + '**\n\n'
 
     for comment in target_comments:
         parsed_comment = comment.body
-        if '`n' in parsed_comment or len(parsed_comment) > 45:
+        if '\n' in parsed_comment or len(parsed_comment) > 45:
             parsed_comment = parsed_comment[:45] + '...'
+            if '\n' in parsed_comment:
+                parsed_comment = parsed_comment.splitlines()[0] + '...'
 
         if previous_author_name == comment.author.name:
             bot_post_body += '- ^^(ID:[' + comment.id + ']) [' + parsed_comment + '](https://www.reddit.com' \
@@ -109,7 +123,7 @@ def format_post(target_comments, post_id, posted_comment):
     return bot_post_body
 
 
-def format_comment(target_comments):
+def format_comment(target_comments, initial_pass, archived_post=None):
     target_comments.sort(key=operator.attrgetter('author.name'))  # sort target_comments by username
 
     previous_author_name = target_comments[0].author.name
@@ -117,22 +131,47 @@ def format_comment(target_comments):
                        + previous_author_name + '**\n\n'
 
     for comment in target_comments:
+        comment_edited_marker = ''
+
+        if comment.edited and archived_post and not initial_pass:
+            edit_counter = 0
+            # sort by newest, then foreach through list in reverse to get the oldest
+            archived_post.comment_sort = 'new'
+            for arch_comment in reversed(archived_post.comments):
+                # look for id matching comment.id in first line of each comment
+                # and check for creation/edited time
+                comment_first_line = arch_comment.body.splitlines()[0]
+                if re.search(r"ID:\[(.*?)\]", comment_first_line).group(1) == comment.id:
+                    archived_ts = datetime.strptime(arch_comment.body.splitlines()[2].split('on: ')[1].replace('**', '')
+                                                    , '%Y-%m-%d %H:%M:%S').timestamp()
+                    if archived_ts < comment.edited:
+                        if edit_counter == 0:
+                            comment_edited_marker = ' [^[original ^comment]](https://www.reddit.com' \
+                                                    + arch_comment.permalink + ')'
+                        else:
+                            comment_edited_marker += '^(, )[^[edit ^' + str(edit_counter) + ']](https://www.reddit.com' \
+                                                     + arch_comment.permalink + ')'
+                        edit_counter += 1
+
         parsed_comment = comment.body
         if '\n' in parsed_comment or len(parsed_comment) > 45:
             parsed_comment = parsed_comment[:45] + '...'
+            if '\n' in parsed_comment:
+                parsed_comment = parsed_comment.splitlines()[0] + '...'
 
         if previous_author_name == comment.author.name:
             bot_comment_body += '- [' + parsed_comment + '](https://www.reddit.com' \
-                                + comment.permalink + '?context=3)\n\n'
+                                + comment.permalink + '?context=3)' + comment_edited_marker + '\n\n'
         else:
             bot_comment_body += '\n\n**' + str(comment.author) + '**\n\n- [' \
-                                + parsed_comment + '](https://www.reddit.com' + comment.permalink + '?context=3)\n\n'
+                                + parsed_comment + '](https://www.reddit.com' + comment.permalink + '?context=3)' \
+                                + comment_edited_marker + '\n\n'
             previous_author_name = comment.author.name
 
     current_time = '{:%m/%d/%Y %H:%M:%S}'.format(datetime.now())
     bot_comment_body += "\n\n&nbsp;\n\n^(**Last edited by bot: " + current_time \
-                        + "**)\n\n---\n\n^(Hi, I tried my best to find all"\
-                        + "the J-Mod's comments in this post.)  \n^(Interested to see how I work? See my post)" \
+                        + "**)\n\n---\n\n^(Hi, I tried my best to find all "\
+                        + "the J-Mod's comments in this post.)  \n^(Interested to see how I work? See my post )" \
                         + "^[here](https://www.reddit.com/user/JMOD_Bloodhound/comments/8dronr/jmod_bloodhound" \
                         + "bot_github_repository/?ref=share&ref_source=link) ^(for my GitHub repo!)"
 
@@ -147,10 +186,21 @@ bot_list = []
 for comment in reddit.redditor('JMOD_Bloodhound').comments.new(limit=None):
     bot_list.append(comment)
 
-submission = reddit.submission(id='9is7c5')
+tracked_posts_list = []
+
+for submission in reddit.subreddit('TrackedJMODComments').new(limit=100):
+    try:
+        submission_id = re.search(r"ID:(.*?)\)", submission.title).group(1)
+    except AttributeError:
+        submission_id = ''
+
+    if submission_id != '':
+        tracked_posts_list.append(submission)
+
+submission = reddit.submission(id='9hfjbt')
 jmod_list = (find_jmod_comments(submission))
 if comment_check(jmod_list):
-    if create_comment(jmod_list, bot_list):
+    if create_comment(jmod_list, bot_list, tracked_posts_list):
         print(submission.title)
         print("JMOD comments be ere mateys")
 
