@@ -34,7 +34,7 @@ def find_jmod_comments(post):
 
 
 def create_comment(target_comments, bot_comments, archived_posts):
-    post_id = '9iiayk'  # change to: target_comments[0].submission.id
+    post_id = target_comments[0].submission.id
 
     for comment in bot_comments:
         if comment.submission.id == post_id:
@@ -43,7 +43,7 @@ def create_comment(target_comments, bot_comments, archived_posts):
 
     # create comment instead, as no previous comment was found
 
-    posted_comment = reddit.submission(id='9iiayk').reply(format_comment(target_comments, True))  # change to:id=post_id
+    posted_comment = reddit.submission(id='post_id').reply(format_comment(target_comments, True))
     formatted_comment_body = format_post(target_comments, posted_comment)
 
     # create archive of comment on subreddit TrackedJMODComments
@@ -57,13 +57,12 @@ def create_comment(target_comments, bot_comments, archived_posts):
     title = '[' + posted_comment.subreddit.display_name + '] (ID:' + posted_comment.submission.id + ') ' \
             + 'JMOD Comments On Thread: ' + title
 
-    archive_post_comment(title, formatted_comment_body, target_comments)
+    archive_comments(target_comments
+                     , reddit.subreddit('TrackedJMODComments').submit(title=title, selftext=formatted_comment_body))
     return True
 
 
 def edit_comment(target_comments, past_comment, archived_posts):
-    print('editing comment')
-
     # edit archived, alert of any edits
     # get the archived post id of this submission
     arch_post = None
@@ -71,26 +70,60 @@ def edit_comment(target_comments, past_comment, archived_posts):
     for post in archived_posts:
         if re.search(r"ID:(.*?)\)", post.title).group(1) == past_comment.submission.id:
             arch_post = post
+            # call format_comment and add additional parameter for initialPass?
+            # that way it can have logic for flagging comments that have been edited since last pass through
 
-    # call format_comment and add additional parameter for initialPass?
-    # that way it can have logic for flagging comments that have been edited since last pass through
-    formatted_comment_body = format_comment(target_comments, False, arch_post)
+            past_comment.edit(format_comment(target_comments, False, arch_post))
+            arch_post.edit(format_post(target_comments, past_comment))
+            archive_comments(target_comments, arch_post)
+            return
+
+    if not arch_post:
+        formatted_comment_body = format_post(target_comments, past_comment)
+        title = past_comment.submission.title
+
+        if len(past_comment.submission.title) > 40:
+            title = past_comment.submission.title[:40] + '...'
+
+        title = '[' + past_comment.subreddit.display_name + '] (ID:' + past_comment.submission.id + ') ' \
+                + 'JMOD Comments On Thread: ' + title
+
+        arch_post = reddit.subreddit('TrackedJMODComments').submit(title=title, selftext=formatted_comment_body)
+        archive_comments(target_comments, arch_post)
+
     return None
 
 
-def archive_post_comment(title, post_body, target_comments):
-    archived_post = reddit.subreddit('TrackedJMODComments').submit(title=title, selftext=post_body)
+def archive_comments(target_comments, archived_post):
+    missing_comments = []
 
     for comment in target_comments:
-        if not comment.edited:
-            ts = str(datetime.fromtimestamp(comment.created_utc))
-            archived_comment = "ID:[" + comment.id + "]\n\nCreated on: **" + ts \
-                               + "**\n\nComment by: **" + comment.author.name + "**\n\n---\n\n" + comment.body \
+        found = False
+        new_edit = False
+
+        archived_post.comment_sort = 'new'
+        for arch_comment in reversed(archived_post.comments):
+            comment_first_line = arch_comment.body.splitlines()[0]
+            if re.search(r"ID:\[(.*?)\]", comment_first_line).group(1) == comment.id:
+                found = True
+                archived_ts = datetime.strptime(arch_comment.body.splitlines()[2].split('on: ')[1].replace('**', '')
+                                                , '%Y-%m-%d %H:%M:%S').timestamp()
+                if comment.edited and archived_ts < comment.edited:
+                    new_edit = True
+
+        if new_edit or not found:
+            missing_comments.append(comment)
+
+    for missing in missing_comments:
+        if not missing.edited:
+            ts = str(datetime.fromtimestamp(missing.created_utc))
+            archived_comment = "ID:[" + missing.id + "]\n\nCreated on: **" + ts \
+                               + "**\n\nComment by: **" + missing.author.name + "**\n\n---\n\n" + missing.body \
                                + '\n\n---'
         else:
-            ts = str(datetime.fromtimestamp(comment.edited))
-            archived_comment = "ID:[" + comment.id + "]\n\nEdited on: **" + ts \
-                               + "**\n\nComment by: **" + comment.author.name + "**\n\n---\n\n" + comment.body \
+            ts = str(datetime.fromtimestamp(missing.edited))
+            archived_comment = "ID:[" + missing.id + "]\n\nEdited on: **" + ts \
+                               + "**\n\nComment by: **" + missing.author.name + "**\n\n---\n\n" + missing.body \
                                + '\n\n---'
 
         reddit.submission(id=archived_post.id).reply(archived_comment)
@@ -135,6 +168,7 @@ def format_comment(target_comments, initial_pass, archived_post=None):
 
         if comment.edited and archived_post and not initial_pass:
             edit_counter = 0
+
             # sort by newest, then foreach through list in reverse to get the oldest
             archived_post.comment_sort = 'new'
             for arch_comment in reversed(archived_post.comments):
@@ -149,8 +183,8 @@ def format_comment(target_comments, initial_pass, archived_post=None):
                             comment_edited_marker = ' [^[original ^comment]](https://www.reddit.com' \
                                                     + arch_comment.permalink + ')'
                         else:
-                            comment_edited_marker += '^(, )[^[edit ^' + str(edit_counter) + ']](https://www.reddit.com' \
-                                                     + arch_comment.permalink + ')'
+                            comment_edited_marker += '^(, )[^[edit ^' + str(edit_counter) \
+                                                     + ']](https://www.reddit.com' + arch_comment.permalink + ')'
                         edit_counter += 1
 
         parsed_comment = comment.body
@@ -178,45 +212,32 @@ def format_comment(target_comments, initial_pass, archived_post=None):
     return bot_comment_body
 
 
+def hunt(subreddit_name):
+    subreddit = reddit.subreddit(subreddit_name)
+
+    bot_list = []
+
+    for comment in reddit.redditor('JMOD_Bloodhound').comments.new(limit=None):
+        bot_list.append(comment)
+
+    tracked_posts_list = []
+
+    for submission in reddit.subreddit('TrackedJMODComments').new(limit=100):
+        try:
+            submission_id = re.search(r"ID:(.*?)\)", submission.title).group(1)
+        except AttributeError:
+            submission_id = ''
+
+        if submission_id != '':
+            tracked_posts_list.append(submission)
+
+    for submission in subreddit.hot(limit=100):
+        jmod_list = (find_jmod_comments(submission))
+        if comment_check(jmod_list):
+            if create_comment(jmod_list, bot_list, tracked_posts_list):
+                print(submission.title)
+    return None
+
+
 reddit = praw.Reddit('JMOD_Bloodhound', user_agent='User Agent - JMOD_Bloodhound PS Script')
-subreddit = reddit.subreddit('2007scape')
-
-bot_list = []
-
-for comment in reddit.redditor('JMOD_Bloodhound').comments.new(limit=None):
-    bot_list.append(comment)
-
-tracked_posts_list = []
-
-for submission in reddit.subreddit('TrackedJMODComments').new(limit=100):
-    try:
-        submission_id = re.search(r"ID:(.*?)\)", submission.title).group(1)
-    except AttributeError:
-        submission_id = ''
-
-    if submission_id != '':
-        tracked_posts_list.append(submission)
-
-submission = reddit.submission(id='9hfjbt')
-jmod_list = (find_jmod_comments(submission))
-if comment_check(jmod_list):
-    if create_comment(jmod_list, bot_list, tracked_posts_list):
-        print(submission.title)
-        print("JMOD comments be ere mateys")
-
-'''
-reddit = praw.Reddit('JMOD_Bloodhound', user_agent='User Agent - JMOD_Bloodhound PS Script')
-subreddit = reddit.subreddit('2007scape')
-
-bot_list = []
-
-for comment in reddit.redditor('JMOD_Bloodhound').comments.new(limit=None):
-    bot_list.append(comment)
-
-for submission in subreddit.hot(limit=15):
-    jmod_list = (find_jmod_comments(submission))
-    if comment_check(jmod_list):
-        if create_comment(jmod_list, bot_list):
-            print(submission.title)
-            print("JMOD comments be ere mateys")
-'''
+hunt('2007scape')
