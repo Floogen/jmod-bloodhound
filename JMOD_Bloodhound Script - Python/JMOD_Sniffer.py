@@ -6,7 +6,7 @@ from datetime import datetime
 
 
 def comment_check(comment_list, subreddit_name):
-    if subreddit_name == '2007scape':
+    if subreddit_name == '2007scape' and len(comment_list) > 0:
         return True
 
     if len(comment_list) > 1:
