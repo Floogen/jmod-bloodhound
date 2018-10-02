@@ -43,7 +43,7 @@ def create_comment(target_comments, bot_comments, archived_posts):
 
     # create comment instead, as no previous comment was found
 
-    posted_comment = reddit.submission(id='post_id').reply(format_comment(target_comments, True))
+    posted_comment = reddit.submission(id=post_id).reply(format_comment(target_comments, True))
     formatted_comment_body = format_post(target_comments, posted_comment)
 
     # create archive of comment on subreddit TrackedJMODComments
@@ -239,5 +239,5 @@ def hunt(subreddit_name):
     return None
 
 
-reddit = praw.Reddit('JMOD_Bloodhound', user_agent='User Agent - JMOD_Bloodhound PS Script')
+reddit = praw.Reddit('JMOD_Bloodhound', user_agent='User Agent - JMOD_Bloodhound Python Script')
 hunt('2007scape')
