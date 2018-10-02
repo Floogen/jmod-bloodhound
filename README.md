@@ -1,5 +1,5 @@
 # JMOD_Bloodhound
-[Reddit Bot] **Python**~~Powershell~~ script that actively checks [/r/2007scape/](https://www.reddit.com/r/2007scape/hot) and [/r/runescape/](https://www.reddit.com/r/runescape/hot) for posts with JMOD replies and links them within the specified post.
+[Reddit Bot] **Python 3** ~~Powershell~~ script that actively checks [/r/2007scape/](https://www.reddit.com/r/2007scape/hot) and [/r/runescape/](https://www.reddit.com/r/runescape/hot) for posts with JMOD replies and links them within the specified post.
 
 # How It Works
 1. The script is scheduled to check [/r/2007scape/](https://www.reddit.com/r/2007scape/hot) and [/r/runescape/](https://www.reddit.com/r/runescape/hot) every 5 minutes for top 100 hot posts with JMOD replies.
