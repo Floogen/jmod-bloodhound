@@ -5,8 +5,11 @@ import re
 from datetime import datetime
 
 
-def comment_check(comment_list):
-    if len(comment_list) > 0:  # change back to 1 after testing
+def comment_check(comment_list, subreddit_name):
+    if subreddit_name == '2007scape':
+        return True
+
+    if len(comment_list) > 1:
         return True
 
     for comment in comment_list:
@@ -204,10 +207,14 @@ def format_comment(target_comments, initial_pass, archived_post=None):
 
     current_time = '{:%m/%d/%Y %H:%M:%S}'.format(datetime.now())
     bot_comment_body += "\n\n&nbsp;\n\n^(**Last edited by bot: " + current_time \
-                        + "**)\n\n---\n\n^(Hi, I tried my best to find all "\
-                        + "the J-Mod's comments in this post.)  \n^(Interested to see how I work? See my post )" \
-                        + "^[here](https://www.reddit.com/user/JMOD_Bloodhound/comments/8dronr/jmod_bloodhound" \
-                        + "bot_github_repository/?ref=share&ref_source=link) ^(for my GitHub repo!)"
+                        + "**)\n\n---\n\n^(I've been rewritten to use Python! I also now archive JMOD comments)" \
+                          " ^((and their edits)^). "\
+                        + "\n^(Read more about the update) " \
+                          "^[here](https://www.reddit.com/user/JMOD_Bloodhound/comments/8dronr/jmod_bloodhound" \
+                          "_bot_github_repository/?ref=share&ref_source=link) " \
+                          "^(or see my Github repo) " \
+                          "^[here](https://www.reddit.com/user/JMOD_Bloodhound/comments/8dronr/" \
+                          "jmod_bloodhoundbot_github_repository/?ref=share&ref_source=link)."
 
     return bot_comment_body
 
@@ -233,7 +240,7 @@ def hunt(subreddit_name):
 
     for submission in subreddit.hot(limit=100):
         jmod_list = (find_jmod_comments(submission))
-        if comment_check(jmod_list):
+        if comment_check(jmod_list, subreddit_name):
             if create_comment(jmod_list, bot_list, tracked_posts_list):
                 print(submission.title)
     return None
