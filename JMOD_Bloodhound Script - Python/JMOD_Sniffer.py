@@ -246,3 +246,4 @@ def hunt(subreddit_name):
 
 reddit = praw.Reddit('JMOD_Bloodhound', user_agent='User Agent - JMOD_Bloodhound Python Script')
 hunt('2007scape')
+hunt('runescape')
