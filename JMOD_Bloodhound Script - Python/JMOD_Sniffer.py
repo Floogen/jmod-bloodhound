@@ -46,7 +46,7 @@ def create_comment(target_comments, bot_comments, archived_posts):
 
     # create comment instead, as no previous comment was found
 
-    posted_comment = reddit.submission(id=post_id).reply(format_comment(target_comments, True))
+    posted_comment = bloodhound_bot.submission(id=post_id).reply(format_comment(target_comments, True))
     formatted_comment_body = format_post(target_comments, posted_comment)
 
     # create archive of comment on subreddit TrackedJMODComments
@@ -56,12 +56,13 @@ def create_comment(target_comments, bot_comments, archived_posts):
     title = posted_comment.submission.title
 
     if len(posted_comment.submission.title) > 40:
-        title = posted_comment.submission.title[:40] + '...'
+        title = posted_comment.submission.title[:40].rstrip() + '...'
     title = '[' + posted_comment.subreddit.display_name + '] (ID:' + posted_comment.submission.id + ') ' \
             + 'JMOD Comments On Thread: ' + title
 
     archive_comments(target_comments
-                     , reddit.subreddit('TrackedJMODComments').submit(title=title, selftext=formatted_comment_body))
+                     , historian_bot.subreddit('TrackedJMODComments').submit(title=title
+                                                                             , selftext=formatted_comment_body))
     return True
 
 
@@ -86,12 +87,12 @@ def edit_comment(target_comments, past_comment, archived_posts):
         title = past_comment.submission.title
 
         if len(past_comment.submission.title) > 40:
-            title = past_comment.submission.title[:40] + '...'
+            title = past_comment.submission.title[:40].rstrip() + '...'
 
         title = '[' + past_comment.subreddit.display_name + '] (ID:' + past_comment.submission.id + ') ' \
                 + 'JMOD Comments On Thread: ' + title
 
-        arch_post = reddit.subreddit('TrackedJMODComments').submit(title=title, selftext=formatted_comment_body)
+        arch_post = historian_bot.subreddit('TrackedJMODComments').submit(title=title, selftext=formatted_comment_body)
         archive_comments(target_comments, arch_post)
 
     return None
@@ -129,7 +130,7 @@ def archive_comments(target_comments, archived_post):
                                + "**\n\nComment by: **" + missing.author.name + "**\n\n---\n\n" + missing.body \
                                + '\n\n---'
 
-        reddit.submission(id=archived_post.id).reply(archived_comment)
+        historian_bot.submission(id=archived_post.id).reply(archived_comment)
 
     return None
 
@@ -144,9 +145,9 @@ def format_post(target_comments, posted_comment):
     for comment in target_comments:
         parsed_comment = comment.body
         if '\n' in parsed_comment or len(parsed_comment) > 45:
-            parsed_comment = parsed_comment[:45] + '...'
+            parsed_comment = parsed_comment[:45].rstrip() + '...'
             if '\n' in parsed_comment:
-                parsed_comment = parsed_comment.splitlines()[0] + '...'
+                parsed_comment = parsed_comment.splitlines()[0].rstrip() + '...'
 
         if previous_author_name == comment.author.name:
             bot_post_body += '- ^^(ID:[' + comment.id + ']) [' + parsed_comment + '](https://www.reddit.com' \
@@ -192,9 +193,9 @@ def format_comment(target_comments, initial_pass, archived_post=None):
 
         parsed_comment = comment.body
         if '\n' in parsed_comment or len(parsed_comment) > 45:
-            parsed_comment = parsed_comment[:45] + '...'
+            parsed_comment = parsed_comment[:45].rstrip() + '...'
             if '\n' in parsed_comment:
-                parsed_comment = parsed_comment.splitlines()[0] + '...'
+                parsed_comment = parsed_comment.splitlines()[0].rstrip() + '...'
 
         if previous_author_name == comment.author.name:
             bot_comment_body += '- [' + parsed_comment + '](https://www.reddit.com' \
@@ -218,16 +219,16 @@ def format_comment(target_comments, initial_pass, archived_post=None):
 
 
 def hunt(subreddit_name):
-    subreddit = reddit.subreddit(subreddit_name)
+    subreddit = bloodhound_bot.subreddit(subreddit_name)
 
     bot_list = []
 
-    for comment in reddit.redditor('JMOD_Bloodhound').comments.new(limit=None):
+    for comment in bloodhound_bot.redditor('JMOD_Bloodhound').comments.new(limit=None):
         bot_list.append(comment)
 
     tracked_posts_list = []
 
-    for submission in reddit.subreddit('TrackedJMODComments').new(limit=100):
+    for submission in historian_bot.subreddit('TrackedJMODComments').new(limit=100):
         try:
             submission_id = re.search(r"ID:(.*?)\)", submission.title).group(1)
         except AttributeError:
@@ -244,6 +245,7 @@ def hunt(subreddit_name):
     return None
 
 
-reddit = praw.Reddit('JMOD_Bloodhound', user_agent='User Agent - JMOD_Bloodhound Python Script')
+bloodhound_bot = praw.Reddit('JMOD_Bloodhound', user_agent='User Agent - JMOD_Bloodhound Python Script')
+historian_bot = praw.Reddit('JMOD_Historian', user_agent='User Agent - JMOD_Historian Python Script')
 hunt('2007scape')
 hunt('runescape')
