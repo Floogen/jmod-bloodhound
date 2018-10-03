@@ -5,11 +5,11 @@ import re
 from datetime import datetime
 
 
-def comment_check(comment_list, subreddit_name):
+def comment_check(comment_list, subreddit_name, comment_count):
     if subreddit_name == '2007scape' and len(comment_list) > 0:
         return True
 
-    if len(comment_list) > 1:
+    if len(comment_list) > 1 and comment_count > 25:
         return True
 
     for comment in comment_list:
@@ -239,7 +239,7 @@ def hunt(subreddit_name):
 
     for submission in subreddit.hot(limit=100):
         jmod_list = (find_jmod_comments(submission))
-        if comment_check(jmod_list, subreddit_name):
+        if comment_check(jmod_list, subreddit_name, submission.num_comments):
             if create_comment(jmod_list, bot_list, tracked_posts_list):
                 print(submission.title)
     return None
