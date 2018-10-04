@@ -246,10 +246,11 @@ def hunt(subreddit_name):
             tracked_posts_list.append(submission)
 
     for submission in subreddit.hot(limit=100):
-        jmod_list = (find_jmod_comments(submission))
-        if comment_check(jmod_list, subreddit_name, submission.num_comments):
-            if create_comment(jmod_list, bot_list, tracked_posts_list):
-                print(submission.title)
+        if submission.author != 'JMOD_Bloodhound':
+            jmod_list = (find_jmod_comments(submission))
+            if comment_check(jmod_list, subreddit_name, submission.num_comments):
+                if create_comment(jmod_list, bot_list, tracked_posts_list):
+                    print(submission.title)
     return None
 
 
