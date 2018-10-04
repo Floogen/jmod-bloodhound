@@ -77,7 +77,8 @@ def edit_comment(target_comments, past_comment, archived_posts):
             # call format_comment and add additional parameter for initialPass?
             # that way it can have logic for flagging comments that have been edited since last pass through
 
-            past_comment.edit(format_comment(target_comments, False, arch_post))
+            # initialPass was False, but set to True to disable tracking and editing of JMOD comments
+            past_comment.edit(format_comment(target_comments, True, arch_post))
             arch_post.edit(format_post(target_comments, past_comment))
             archive_comments(target_comments, arch_post)
             return
@@ -100,10 +101,12 @@ def edit_comment(target_comments, past_comment, archived_posts):
 
 def archive_comments(target_comments, archived_post):
     missing_comments = []
+    edited_comments = []
 
     for comment in target_comments:
         found = False
         new_edit = False
+        target_arch_comment = None
 
         archived_post.comment_sort = 'new'
         for arch_comment in reversed(archived_post.comments):
@@ -114,25 +117,28 @@ def archive_comments(target_comments, archived_post):
                                                 , '%Y-%m-%d %H:%M:%S').timestamp()
                 if comment.edited and archived_ts < comment.edited:
                     new_edit = True
+                    target_arch_comment = arch_comment
                 elif comment.edited and archived_ts >= comment.edited:
                     new_edit = False
 
-        if new_edit or not found:
+        if new_edit:
+            edited_comments.append(target_arch_comment)
+        elif not found:
             missing_comments.append(comment)
 
     for missing in missing_comments:
-        if not missing.edited:
-            ts = str(datetime.fromtimestamp(missing.created_utc))
-            archived_comment = "ID:[" + missing.id + "]\n\nCreated on: **" + ts \
-                               + "**\n\nComment by: **" + missing.author.name + "**\n\n---\n\n" + missing.body \
-                               + '\n\n---'
-        else:
-            ts = str(datetime.fromtimestamp(missing.edited))
-            archived_comment = "ID:[" + missing.id + "]\n\nEdited on: **" + ts \
-                               + "**\n\nComment by: **" + missing.author.name + "**\n\n---\n\n" + missing.body \
-                               + '\n\n---'
-
+        ts = str(datetime.fromtimestamp(missing.created_utc))
+        archived_comment = "ID:[" + missing.id + "]\n\nCreated on: **" + ts \
+                           + "**\n\nComment by: **" + missing.author.name + "**\n\n---\n\n" + missing.body \
+                           + '\n\n---'
         historian_bot.submission(id=archived_post.id).reply(archived_comment)
+
+    for edited in edited_comments:
+        ts = str(datetime.fromtimestamp(edited.edited))
+        archived_comment = "ID:[" + edited.id + "]\n\nEdited on: **" + ts \
+                           + "**\n\nComment by: **" + edited.author.name + "**\n\n---\n\n" + edited.body \
+                           + '\n\n---'
+        edited.edit(archived_comment)
 
     return None
 
@@ -171,7 +177,7 @@ def format_comment(target_comments, initial_pass, archived_post=None):
 
     for comment in target_comments:
         comment_edited_marker = ''
-
+        # disabled the tracking and labeling of edited comments
         if comment.edited and archived_post and not initial_pass:
             edit_counter = 0
 
