@@ -114,6 +114,8 @@ def archive_comments(target_comments, archived_post):
                                                 , '%Y-%m-%d %H:%M:%S').timestamp()
                 if comment.edited and archived_ts < comment.edited:
                     new_edit = True
+                elif comment.edited and archived_ts >= comment.edited:
+                    new_edit = False
 
         if new_edit or not found:
             missing_comments.append(comment)
