@@ -216,8 +216,7 @@ def format_comment(target_comments, initial_pass, archived_post=None):
 
     current_time = '{:%m/%d/%Y %H:%M:%S}'.format(datetime.now())
     bot_comment_body += "\n\n&nbsp;\n\n^(**Last edited by bot: " + current_time \
-                        + "**)\n\n---\n\n^(I've been rewritten to use Python! I also now archive JMOD comments)" \
-                          " ^((and edited comments)^). "\
+                        + "**)\n\n---\n\n^(I've been rewritten to use Python! I also now archive JMOD comments.)" \
                         + "  \n^(Read more about) [^the ^update ^here](https://www.reddit.com/user/JMOD_Bloodhound/" \
                           "comments/9kqvis/bot_update_python_archiving/) ^(or see my) [^Github ^repo ^here]" \
                           "(https://www.reddit.com/user/JMOD_Bloodhound/comments/8dronr/" \
