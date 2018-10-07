@@ -20,6 +20,12 @@ def comment_check(comment_list, subreddit_name, comment_count):
 
 def find_jmod_comments(post):
     comment_list = []
+    
+    jmod_flairs = [
+        'jagexmod',
+        'modmatk',
+        'mod-jagex'
+    ]
 
     while True:
         try:
@@ -30,8 +36,7 @@ def find_jmod_comments(post):
             time.sleep(1)
 
     for comment in post.comments.list():
-        if comment.author_flair_css_class == "jagexmod" or comment.author_flair_css_class == "modmatk" \
-                or comment.author_flair_css_class == "mod-jagex":
+        if comment.author_flair_css_class in jmod_flairs:
             comment_list.append(comment)
     return comment_list
 
