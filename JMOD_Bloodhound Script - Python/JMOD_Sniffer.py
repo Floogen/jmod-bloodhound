@@ -100,9 +100,6 @@ def edit_comment(target_comments, past_comment, archived_posts):
 
 
 def archive_comments(target_comments, archived_post):
-    missing_comments = []
-    edited_comments = []
-
     for comment in target_comments:
         found = False
         new_edit = False
@@ -122,23 +119,23 @@ def archive_comments(target_comments, archived_post):
                     new_edit = False
 
         if new_edit:
-            edited_comments.append(target_arch_comment)
+            ts = str(datetime.fromtimestamp(comment.edited))
+            archived_comment = "ID:[" + comment.id + "]\n\nEdited on: **" + ts \
+                               + "**\n\nComment by: **" + comment.author.name \
+                               + "**\n\n**[Click here for comment context](" \
+                               + "https://www.reddit.com" + comment.permalink + "?context=3)**\n\n---\n\n" \
+                               + comment.body \
+                               + '\n\n---'
+            target_arch_comment.edit(archived_comment)
         elif not found:
-            missing_comments.append(comment)
-
-    for missing in missing_comments:
-        ts = str(datetime.fromtimestamp(missing.created_utc))
-        archived_comment = "ID:[" + missing.id + "]\n\nCreated on: **" + ts \
-                           + "**\n\nComment by: **" + missing.author.name + "**\n\n---\n\n" + missing.body \
-                           + '\n\n---'
-        historian_bot.submission(id=archived_post.id).reply(archived_comment)
-
-    for edited in edited_comments:
-        ts = str(datetime.fromtimestamp(edited.edited))
-        archived_comment = "ID:[" + edited.id + "]\n\nEdited on: **" + ts \
-                           + "**\n\nComment by: **" + edited.author.name + "**\n\n---\n\n" + edited.body \
-                           + '\n\n---'
-        edited.edit(archived_comment)
+            ts = str(datetime.fromtimestamp(comment.created_utc))
+            archived_comment = "ID:[" + comment.id + "]\n\nCreated on: **" + ts \
+                               + "**\n\nComment by: **" + comment.author.name \
+                               + "**\n\n**[Click here for comment context](" \
+                               + "https://www.reddit.com" + comment.permalink + "?context=3)**\n\n---\n\n" \
+                               + comment.body \
+                               + '\n\n---'
+            historian_bot.submission(id=archived_post.id).reply(archived_comment)
 
     return None
 
