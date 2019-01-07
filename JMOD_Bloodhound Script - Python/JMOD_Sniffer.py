@@ -128,7 +128,7 @@ def archive_comments(target_comments, archived_post):
             archived_comment = "ID:[" + comment.id + "]\n\nEdited on: **" + ts \
                                + "**\n\nComment by: **" + comment.author.name \
                                + "**\n\n**[Click here for comment context](" \
-                               + "https://www.reddit.com" + comment.permalink + "?context=3)**\n\n---\n\n" \
+                               + comment.permalink + "?context=3)**\n\n---\n\n" \
                                + comment.body \
                                + '\n\n---'
             target_arch_comment.edit(archived_comment)
@@ -137,7 +137,7 @@ def archive_comments(target_comments, archived_post):
             archived_comment = "ID:[" + comment.id + "]\n\nCreated on: **" + ts \
                                + "**\n\nComment by: **" + comment.author.name \
                                + "**\n\n**[Click here for comment context](" \
-                               + "https://www.reddit.com" + comment.permalink + "?context=3)**\n\n---\n\n" \
+                               + comment.permalink + "?context=3)**\n\n---\n\n" \
                                + comment.body \
                                + '\n\n---'
             historian_bot.submission(id=archived_post.id).reply(archived_comment)
@@ -160,11 +160,11 @@ def format_post(target_comments, posted_comment):
                 parsed_comment = parsed_comment.splitlines()[0].rstrip() + '...'
 
         if previous_author_name == comment.author.name:
-            bot_post_body += '- ^^(ID:[' + comment.id + ']) [' + parsed_comment + '](https://www.reddit.com' \
+            bot_post_body += '- ^^(ID:[' + comment.id + ']) [' + parsed_comment + '](' \
                                 + comment.permalink + '?context=3)\n\n'
         else:
             bot_post_body += '\n\n**' + str(comment.author) + '**\n\n- ^^(ID:[' + comment.id + ']) [' \
-                                + parsed_comment + '](https://www.reddit.com' + comment.permalink + '?context=3)\n\n'
+                                + parsed_comment + '](' + comment.permalink + '?context=3)\n\n'
             previous_author_name = comment.author.name
 
     return bot_post_body
@@ -194,11 +194,11 @@ def format_comment(target_comments, initial_pass, archived_post=None):
                                                     , '%Y-%m-%d %H:%M:%S').timestamp()
                     if archived_ts < comment.edited:
                         if edit_counter == 0:
-                            comment_edited_marker = ' [^[original ^comment]](https://www.reddit.com' \
+                            comment_edited_marker = ' [^[original ^comment]](' \
                                                     + arch_comment.permalink + ')'
                         else:
                             comment_edited_marker += '^(, )[^[edit ^' + str(edit_counter) \
-                                                     + ']](https://www.reddit.com' + arch_comment.permalink + ')'
+                                                     + ']](' + arch_comment.permalink + ')'
                         edit_counter += 1
 
         parsed_comment = comment.body
@@ -208,21 +208,21 @@ def format_comment(target_comments, initial_pass, archived_post=None):
                 parsed_comment = parsed_comment.splitlines()[0].rstrip() + '...'
 
         if previous_author_name == comment.author.name:
-            bot_comment_body += '- [' + parsed_comment + '](https://www.reddit.com' \
+            bot_comment_body += '- [' + parsed_comment + '](' \
                                 + comment.permalink + '?context=3)' + comment_edited_marker + '\n\n'
         else:
             bot_comment_body += '\n\n**' + str(comment.author) + '**\n\n- [' \
-                                + parsed_comment + '](https://www.reddit.com' + comment.permalink + '?context=3)' \
+                                + parsed_comment + '](' + comment.permalink + '?context=3)' \
                                 + comment_edited_marker + '\n\n'
             previous_author_name = comment.author.name
 
     current_time = '{:%m/%d/%Y %H:%M:%S}'.format(datetime.now())
     bot_comment_body += "\n\n&nbsp;\n\n^(**Last edited by bot: " + current_time \
                         + "**)\n\n---\n\n^(I've been rewritten to use Python! I also now archive JMOD comments.)" \
-                        + "  \n^(Read more about) [^the ^update ^here](https://www.reddit.com/user/JMOD_Bloodhound/" \
+                        + "  \n^(Read more about) [^the ^update ^here](/u/JMOD_Bloodhound/" \
                           "comments/9kqvis/bot_update_python_archiving/) ^(or see my) [^Github ^repo ^here]" \
-                          "(https://www.reddit.com/user/JMOD_Bloodhound/comments/8dronr/" \
-                          "jmod_bloodhoundbot_github_repository/?ref=share&ref_source=link)^."
+                          "(/u/JMOD_Bloodhound/comments/8dronr/" \
+                          "jmod_bloodhoundbot_github_repository/)^."
 
     return bot_comment_body
 
