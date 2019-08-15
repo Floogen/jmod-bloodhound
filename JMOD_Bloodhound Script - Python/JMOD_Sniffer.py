@@ -202,8 +202,8 @@ def format_comment(target_comments, initial_pass, archived_post=None):
                         edit_counter += 1
 
         parsed_comment = comment.body
-        if '\n' in parsed_comment or len(parsed_comment) > 45:
-            parsed_comment = parsed_comment[:45].rstrip() + '...'
+        if '\n' in parsed_comment or len(parsed_comment) > 120:
+            parsed_comment = parsed_comment[:120].rstrip() + '...'
             if '\n' in parsed_comment:
                 parsed_comment = parsed_comment.splitlines()[0].rstrip() + '...'
 
