@@ -29,7 +29,7 @@ def find_jmod_comments(post):
 
     while True:
         try:
-            post.comments.replace_more(limit=0)
+            post.comments.replace_more(limit=None)
             break
         except Exception:
             print('Handling replace_more exception')
