@@ -3,6 +3,7 @@ import time
 import operator
 import re
 from datetime import datetime
+from praw.models import MoreComments
 
 
 def comment_check(comment_list, subreddit_name, comment_count):
@@ -20,7 +21,7 @@ def comment_check(comment_list, subreddit_name, comment_count):
 
 def find_jmod_comments(post):
     comment_list = []
-    
+
     jmod_flairs = [
         'jagexmod',
         'modmatk',
@@ -41,16 +42,28 @@ def find_jmod_comments(post):
     return comment_list
 
 
+def find_bot_comment(post):
+    for comment in post.comments:
+        if isinstance(comment, MoreComments) or comment.author is None:
+            continue
+        if comment.author.name == 'JMOD_Bloodhound' and comment.parent_id == f"t3_{post.id}":
+            return comment
+    return None
+
+
 def create_comment(target_comments, bot_comments, archived_posts):
     post_id = target_comments[0].submission.id
 
     for comment in bot_comments:
-        if comment.submission.id == post_id:
+        if comment.submission.id == post_id and comment.parent_id == f"t3_{post_id}":
             # bot has commented here before, edit the comment
             return edit_comment(target_comments, comment, archived_posts)
 
-    # create comment instead, as no previous comment was found
+    bot_comment = find_bot_comment(target_comments[0].submission)
+    if bot_comment is not None:
+        return edit_comment(target_comments, bot_comment, archived_posts)
 
+    # create comment instead, as no previous comment was found
     posted_comment = bloodhound_bot.submission(id=post_id).reply(format_comment(target_comments, True))
     formatted_comment_body = format_post(target_comments, posted_comment)
 
