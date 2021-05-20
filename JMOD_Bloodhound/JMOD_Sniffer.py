@@ -6,6 +6,12 @@ import configparser
 from datetime import datetime
 from praw.models import MoreComments
 
+def read_config_list(key):
+    """
+    Reads a key from the section DEFAULT, removing spaces and splitting it at commas
+    """
+    return config["DEFAULT"][key].replace(" ", "").split(",")
+
 
 def comment_check(comment_list, subreddit_name, comment_count):
     if subreddit_name == '2007scape' and len(comment_list) > 0:
@@ -23,7 +29,7 @@ def comment_check(comment_list, subreddit_name, comment_count):
 def find_jmod_comments(post):
     comment_list = []
 
-    jmod_flairs = config["DEFAULT"]["flairs"].replace(" ", "").split(",")
+    jmod_flairs = read_config_list("flairs")
 
     while True:
         try:
@@ -267,7 +273,7 @@ def hunt(subreddit_name):
 config = configparser.ConfigParser();
 config.read("config.cfg")
 
-subreddits = config["DEFAULT"]["subreddits"].replace(" ", "").split(",")
+subreddits = read_config_list("subreddits")
 
 bloodhound_bot = praw.Reddit('JMOD_Bloodhound', user_agent='User Agent - JMOD_Bloodhound Python Script')
 historian_bot = praw.Reddit('JMOD_Historian', user_agent='User Agent - JMOD_Historian Python Script')
