@@ -9,3 +9,4 @@
 !*.ps1
 !*.py
 !/JMOD_Bloodhound
+!/JMOD_Bloodhound/config.cfg
