@@ -271,7 +271,10 @@ def hunt(subreddit_name):
 config = configparser.ConfigParser();
 config.read("config.cfg")
 
+subreddits = config["DEFAULT"]["subreddits"].replace(" ", "").split(",")
+
 bloodhound_bot = praw.Reddit('JMOD_Bloodhound', user_agent='User Agent - JMOD_Bloodhound Python Script')
 historian_bot = praw.Reddit('JMOD_Historian', user_agent='User Agent - JMOD_Historian Python Script')
-hunt('2007scape')
-hunt('runescape')
+
+for subreddit in subreddits:
+    hunt(subreddit)
