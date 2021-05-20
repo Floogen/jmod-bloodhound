@@ -2,6 +2,7 @@ import praw
 import time
 import operator
 import re
+import configparser
 from datetime import datetime
 from praw.models import MoreComments
 
@@ -267,6 +268,8 @@ def hunt(subreddit_name):
                     print(submission.title)
     return None
 
+config = configparser.ConfigParser();
+config.read("config.cfg")
 
 bloodhound_bot = praw.Reddit('JMOD_Bloodhound', user_agent='User Agent - JMOD_Bloodhound Python Script')
 historian_bot = praw.Reddit('JMOD_Historian', user_agent='User Agent - JMOD_Historian Python Script')
