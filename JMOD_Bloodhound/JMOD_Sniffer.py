@@ -23,11 +23,7 @@ def comment_check(comment_list, subreddit_name, comment_count):
 def find_jmod_comments(post):
     comment_list = []
 
-    jmod_flairs = [
-        'jagexmod',
-        'modmatk',
-        'mod-jagex'
-    ]
+    jmod_flairs = config["DEFAULT"]["flairs"].replace(" ", "").split(",")
 
     while True:
         try:
