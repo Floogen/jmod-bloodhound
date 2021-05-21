@@ -83,7 +83,7 @@ def create_comment(target_comments, bot_comments, archived_posts):
             + 'JMOD Comments On Thread: ' + title
 
     archive_comments(target_comments
-                     , historian_bot.subreddit('TrackedJMODComments').submit(title=title
+                     , historian_bot.subreddit(archive_subreddit).submit(title=title
                                                                              , selftext=formatted_comment_body))
     return True
 
@@ -115,7 +115,7 @@ def edit_comment(target_comments, past_comment, archived_posts):
         title = '[' + past_comment.subreddit.display_name + '] (ID:' + past_comment.submission.id + ') ' \
                 + 'JMOD Comments On Thread: ' + title
 
-        arch_post = historian_bot.subreddit('TrackedJMODComments').submit(title=title, selftext=formatted_comment_body)
+        arch_post = historian_bot.subreddit(archive_subreddit).submit(title=title, selftext=formatted_comment_body)
         archive_comments(target_comments, arch_post)
 
     return None
@@ -254,7 +254,7 @@ def hunt(subreddit_name):
 
     tracked_posts_list = []
 
-    for submission in historian_bot.subreddit('TrackedJMODComments').new(limit=100):
+    for submission in historian_bot.subreddit(archive_subreddit).new(limit=100):
         try:
             submission_id = re.search(r"ID:(.*?)\)", submission.title).group(1)
         except AttributeError:
@@ -276,6 +276,7 @@ config.read(os.path.join(os.path.dirname(os.path.realpath(__file__)), "config.cf
 
 subreddits = read_config_list("subreddits")
 bot_name = config["DEFAULT"]["bot_name"]
+archive_subreddit = config["DEFAULT"]["archive_subreddit"]
 
 bloodhound_bot = praw.Reddit(bot_name, user_agent='User Agent - JMOD_Bloodhound Python Script')
 historian_bot = praw.Reddit('JMOD_Historian', user_agent='User Agent - JMOD_Historian Python Script')
