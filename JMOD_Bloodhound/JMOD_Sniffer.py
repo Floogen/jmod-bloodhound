@@ -49,7 +49,7 @@ def find_bot_comment(post):
     for comment in post.comments:
         if isinstance(comment, MoreComments) or comment.author is None:
             continue
-        if comment.author.name == 'JMOD_Bloodhound' and comment.parent_id == f"t3_{post.id}":
+        if comment.author.name == bot_name and comment.parent_id == f"t3_{post.id}":
             return comment
     return None
 
@@ -248,7 +248,7 @@ def hunt(subreddit_name):
 
     bot_list = []
 
-    for comment in bloodhound_bot.redditor('JMOD_Bloodhound').comments.new(limit=None):
+    for comment in bloodhound_bot.redditor(bot_name).comments.new(limit=None):
         bot_list.append(comment)
 
     tracked_posts_list = []
@@ -263,7 +263,7 @@ def hunt(subreddit_name):
             tracked_posts_list.append(submission)
 
     for submission in subreddit.hot(limit=100):
-        if submission.author != 'JMOD_Bloodhound':
+        if submission.author != bot_name:
             jmod_list = (find_jmod_comments(submission))
             if comment_check(jmod_list, subreddit_name, submission.num_comments):
                 if create_comment(jmod_list, bot_list, tracked_posts_list):
@@ -274,8 +274,9 @@ config = configparser.ConfigParser();
 config.read("config.cfg")
 
 subreddits = read_config_list("subreddits")
+bot_name = config["DEFAULT"]["bot_name"]
 
-bloodhound_bot = praw.Reddit('JMOD_Bloodhound', user_agent='User Agent - JMOD_Bloodhound Python Script')
+bloodhound_bot = praw.Reddit(bot_name, user_agent='User Agent - JMOD_Bloodhound Python Script')
 historian_bot = praw.Reddit('JMOD_Historian', user_agent='User Agent - JMOD_Historian Python Script')
 
 for subreddit in subreddits:
