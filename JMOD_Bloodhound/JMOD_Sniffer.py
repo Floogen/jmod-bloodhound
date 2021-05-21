@@ -2,6 +2,7 @@ import praw
 import time
 import operator
 import re
+import os
 import configparser
 from datetime import datetime
 from praw.models import MoreComments
@@ -271,7 +272,7 @@ def hunt(subreddit_name):
     return None
 
 config = configparser.ConfigParser();
-config.read("config.cfg")
+config.read(os.path.join(os.path.dirname(os.path.realpath(__file__)), "config.cfg"))
 
 subreddits = read_config_list("subreddits")
 bot_name = config["DEFAULT"]["bot_name"]
