@@ -2,8 +2,16 @@ import praw
 import time
 import operator
 import re
+import os
+import configparser
 from datetime import datetime
 from praw.models import MoreComments
+
+def read_config_list(key):
+    """
+    Reads a key from the section DEFAULT, removing spaces and splitting it at commas
+    """
+    return config["DEFAULT"][key].replace(" ", "").split(",")
 
 
 def comment_check(comment_list, subreddit_name, comment_count):
@@ -22,11 +30,7 @@ def comment_check(comment_list, subreddit_name, comment_count):
 def find_jmod_comments(post):
     comment_list = []
 
-    jmod_flairs = [
-        'jagexmod',
-        'modmatk',
-        'mod-jagex'
-    ]
+    jmod_flairs = read_config_list("flairs")
 
     while True:
         try:
@@ -46,7 +50,7 @@ def find_bot_comment(post):
     for comment in post.comments:
         if isinstance(comment, MoreComments) or comment.author is None:
             continue
-        if comment.author.name == 'JMOD_Bloodhound' and comment.parent_id == f"t3_{post.id}":
+        if comment.author.name == bot_name and comment.parent_id == f"t3_{post.id}":
             return comment
     return None
 
@@ -78,8 +82,9 @@ def create_comment(target_comments, bot_comments, archived_posts):
     title = '[' + posted_comment.subreddit.display_name + '] (ID:' + posted_comment.submission.id + ') ' \
             + 'JMOD Comments On Thread: ' + title
 
-    archive_comments(target_comments
-                     , historian_bot.subreddit('TrackedJMODComments').submit(title=title
+    if should_archive_comments:
+        archive_comments(target_comments
+                         , historian_bot.subreddit(archive_subreddit).submit(title=title
                                                                              , selftext=formatted_comment_body))
     return True
 
@@ -111,7 +116,7 @@ def edit_comment(target_comments, past_comment, archived_posts):
         title = '[' + past_comment.subreddit.display_name + '] (ID:' + past_comment.submission.id + ') ' \
                 + 'JMOD Comments On Thread: ' + title
 
-        arch_post = historian_bot.subreddit('TrackedJMODComments').submit(title=title, selftext=formatted_comment_body)
+        arch_post = historian_bot.subreddit(archive_subreddit).submit(title=title, selftext=formatted_comment_body)
         archive_comments(target_comments, arch_post)
 
     return None
@@ -245,30 +250,39 @@ def hunt(subreddit_name):
 
     bot_list = []
 
-    for comment in bloodhound_bot.redditor('JMOD_Bloodhound').comments.new(limit=None):
+    for comment in bloodhound_bot.redditor(bot_name).comments.new(limit=None):
         bot_list.append(comment)
 
     tracked_posts_list = []
 
-    for submission in historian_bot.subreddit('TrackedJMODComments').new(limit=100):
-        try:
-            submission_id = re.search(r"ID:(.*?)\)", submission.title).group(1)
-        except AttributeError:
-            submission_id = ''
+    if should_archive_comments:
+        for submission in historian_bot.subreddit(archive_subreddit).new(limit=100):
+            try:
+                submission_id = re.search(r"ID:(.*?)\)", submission.title).group(1)
+            except AttributeError:
+                submission_id = ''
 
-        if submission_id != '':
-            tracked_posts_list.append(submission)
+            if submission_id != '':
+                tracked_posts_list.append(submission)
 
     for submission in subreddit.hot(limit=100):
-        if submission.author != 'JMOD_Bloodhound':
+        if submission.author != bot_name:
             jmod_list = (find_jmod_comments(submission))
             if comment_check(jmod_list, subreddit_name, submission.num_comments):
                 if create_comment(jmod_list, bot_list, tracked_posts_list):
                     print(submission.title)
     return None
 
+config = configparser.ConfigParser();
+config.read(os.path.join(os.path.dirname(os.path.realpath(__file__)), "config.cfg"))
 
-bloodhound_bot = praw.Reddit('JMOD_Bloodhound', user_agent='User Agent - JMOD_Bloodhound Python Script')
+subreddits = read_config_list("subreddits")
+bot_name = config["DEFAULT"]["bot_name"]
+archive_subreddit = config["DEFAULT"].get("archive_subreddit", "")
+should_archive_comments = bool(archive_subreddit) and config["DEFAULT"].getboolean("archive_comments", True)
+
+bloodhound_bot = praw.Reddit(bot_name, user_agent='User Agent - JMOD_Bloodhound Python Script')
 historian_bot = praw.Reddit('JMOD_Historian', user_agent='User Agent - JMOD_Historian Python Script')
-hunt('2007scape')
-hunt('runescape')
+
+for subreddit in subreddits:
+    hunt(subreddit)
